@@ -1,0 +1,51 @@
+- User
+    - name
+    - email
+    - loation
+
+
+- Job Profiles
+    - timeframe
+    - profile
+    - company
+    - location: optional
+
+
+- Projects
+    - story
+    - keywords
+
+- Project summaries
+    - Project FK
+    - summary
+
+
+- Job-Project Mapping
+    - Job FK
+    - Project Summary FK
+
+
+- skills
+    - name
+    - rating
+
+- profile summary
+    - details
+
+- education
+    - college
+    - timeframe
+    - degree
+
+- conatacts
+    - label
+    - info
+
+- Resume
+    - [projects fk]
+    - profile summary FK
+    - [Job profile FK]
+        - [project summary FK]
+    - education FK
+    - Skills FK
+    - Contacts FK
