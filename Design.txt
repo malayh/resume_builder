@@ -4,6 +4,7 @@
     - loation
 
 
+
 - Job Profiles
     - timeframe
     - profile
@@ -49,3 +50,51 @@
     - education FK
     - Skills FK
     - Contacts FK
+
+
+----- Table ------
+users
+    - id
+    - email
+    - name
+
+contact_details
+    - id
+    - lable
+    - value
+
+job_profiles
+    - id
+    - start_time
+    - end_time
+    - profile
+    - company
+    - location
+
+projects
+    - id
+    - story
+    - keywords
+    - job_profiles FK optional
+
+project_summaries
+    - id
+    - projects FK
+    - summary
+
+- skills
+    - label
+    - level
+
+- educations
+    - id
+    - degree
+    - university
+    - start_time
+    - end_time
+
+- resumes
+    - id
+    - name
+    - profile FK
+    - 
