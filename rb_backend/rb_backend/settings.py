@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
 
     # Resume builder app
-    # 'core_api',
+    'core_api',
     'users'
 ]
 
@@ -135,4 +135,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES':(
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DATE_INPUT_FORMATS': ['iso-8601', '%Y-%m-%dT%H:%M:%S.%fZ'],
 }

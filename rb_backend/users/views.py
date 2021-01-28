@@ -49,20 +49,22 @@ class Auth(ObtainAuthToken):
         if not email or not password:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"msg":"Provide both email and password"})
 
-        user = authenticate(request=request, u_email=email,password=password)
+        user = authenticate(request=request, username=email,password=password)
         
         if not user:
             return Response(data={'msg': 'Invalid Credentials'},status=status.HTTP_404_NOT_FOUND)
 
         token, _ = Token.objects.get_or_create(user=user)
-        return Response({"msg":"Logged In", "token":token.key})
+        return Response({"msg":"Logged In", "token":token.key , "id":user.id})
 
 class Logout(APIView):
     def post(self, request, *args, **kwargs):
         request.user.auth_token.delete()
         return Response(data={"msg":"Logged out"},status=status.HTTP_200_OK)
 
-    
+
+class UserOperations(APIView):
+    pass
 
 class Test(APIView):
     def get(self,request,*args,**kwargs):

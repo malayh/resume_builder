@@ -1,100 +1,113 @@
-- User
-    - name
-    - email
-    - loation
-
-
-
-- Job Profiles
-    - timeframe
-    - profile
-    - company
-    - location: optional
-
-
-- Projects
-    - story
-    - keywords
-
-- Project summaries
-    - Project FK
-    - summary
-
-
-- Job-Project Mapping
-    - Job FK
-    - Project Summary FK
-
-
-- skills
-    - name
-    - rating
-
-- profile summary
-    - details
-
-- education
-    - college
-    - timeframe
-    - degree
-
-- conatacts
-    - label
-    - info
-
-- Resume
-    - [projects fk]
-    - profile summary FK
-    - [Job profile FK]
-        - [project summary FK]
-    - education FK
-    - Skills FK
-    - Contacts FK
-
-
 ----- Table ------
-users
+- users
     - id
     - email
     - name
 
-contact_details
+- contact_details
+    - user fk
     - id
     - lable
     - value
 
-job_profiles
-    - id
+- job_profiles
+    - user fk
     - start_time
     - end_time
     - profile
     - company
     - location
 
-projects
-    - id
+- projects
+    - user fk
     - story
     - keywords
     - job_profiles FK optional
 
-project_summaries
+- project_summaries
+    - user fk
     - id
     - projects FK
     - summary
 
 - skills
+    - user fk
     - label
     - level
 
 - educations
-    - id
+    - user fk
     - degree
     - university
     - start_time
     - end_time
 
 - resumes
-    - id
+    - user_fk
     - name
-    - profile FK
-    - 
+    - profile
+    - profile summary fk
+
+- resume_contact_detials
+    - resume fk
+    - contact_details fk
+
+- resume_skills
+    - resume fk
+    - skills fk
+
+- resume_project
+    - resume fk
+    - profile_summary fk
+
+- resume_work_history
+    - resumes fk
+    - job_profiles fk
+
+- resume_work_history_projects
+    - resume_work_history fk
+    - project summary fk
+
+- resume_education
+    - resume fk
+    - educations fk
+
+- resume_education_projects
+    - resume_education fk
+    - project_summaries fk
+
+
+-------------------
+- resumes
+    - will have
+        - name
+        - profile
+        - conatact details
+    - can have
+        - skills
+        - profile summary
+        - project section
+            - will have project summaries, one or more
+        - work history section
+            - will have job_profiles
+                - timeframe, profile, company, location
+                - will have project summaries, one or more
+
+        - education section
+            - degree, university, timeframe
+            - can have project summary
+
+resume :
+{
+    name: 
+    profile:
+    profile_summary: 
+    contact_detials:[contact_details IDs],
+    skills:[skill ids],
+    project_section:[project summary IDs],
+    work_history_section:[
+        { job_profile : [ project summary IDs] }
+    ]
+    education_section:[educations IDs]
+}
+

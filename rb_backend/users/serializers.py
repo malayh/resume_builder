@@ -13,7 +13,6 @@ class RB_User_Serializer(serializers.Serializer):
         Raises error on invalid password
         """
         validate_password(validated_data["password"])
-        validated_data["password"] = make_password(validated_data.get("password"))
         return RB_User(
             is_active=True,
             is_superuser=False,
