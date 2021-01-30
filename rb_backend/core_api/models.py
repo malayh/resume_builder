@@ -1,6 +1,13 @@
 from django.db import models
 from users.models import RB_User
 
+# NOTE:
+#   - Every entity must have user_fk
+#   - Two entities can be mapped to each other only by creator of both entities
+#   - Which ever entities have a fk field, must declare list named "fks" in Meta class of the respective
+#   seriallizer
+
+
 # Create your models here.
 class Contact_Details(models.Model):
     user_fk = models.ForeignKey(RB_User,on_delete=models.CASCADE)
@@ -51,46 +58,53 @@ class Projects_Summaries(models.Model):
     summary = models.TextField(null=False)
 
 
-
 class Resumes(models.Model):
     user_fk = models.ForeignKey(RB_User,on_delete=models.CASCADE)
-    profile = models.TextField(null=False)
+    title = models.TextField()
+    profile = models.TextField()
     profile_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.SET_NULL,null=True)
 
 class Resume_Contact_Detail_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
+    position = models.IntegerField(default=0)
     contact_details_fk = models.ForeignKey(Contact_Details,on_delete=models.CASCADE)
 
 class Resume_Skill_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
+    position = models.IntegerField(default=0,unique=True)
     skill_fk = models.ForeignKey(Skills,on_delete=models.CASCADE)
 
 class Resume_Project_Summary_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
+    position = models.IntegerField(default=0,unique=True)
     project_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.CASCADE)
 
 class Resume_Work_History_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
+    position = models.IntegerField(default=0,unique=True)
     job_profile_fk = models.ForeignKey(Job_Profiles,on_delete=models.CASCADE)
 
 class Resume_Work_History_Project_Summary_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     resume_wh_fk = models.ForeignKey(Resume_Work_History_Map,on_delete=models.CASCADE)
+    position = models.IntegerField(default=0,unique=True)
     project_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.CASCADE)
 
 class Resume_Education_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
+    position = models.IntegerField(default=0,unique=True)
     education_fk = models.ForeignKey(Educations,on_delete=models.CASCADE)
 
 class Resume_Education_Project_Summary_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     resume_edu_fk = models.ForeignKey(Resume_Education_Map,on_delete=models.CASCADE)
     project_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.CASCADE)
+    position = models.IntegerField(default=0)
 
 class Resume_Content_Section_Positions(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     section_name = models.TextField()
-    position = models.IntegerField()
+    position = models.IntegerField(default=0,unique=True)
 
 
 

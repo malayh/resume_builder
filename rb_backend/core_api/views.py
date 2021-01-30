@@ -1,13 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from typing import ClassVar
 
 
-from .models import Contact_Details, Skills, Job_Profiles
-from .serializers import Contact_Details_Serializer, Skills_Serializer, Job_Profiles_Serializer
-
+from .models import *
+from .serializers import *
 
 """
+TODO:
+    - Create generics for the List and detail view classes
+    - Protect FKs from being used by someone other than the creator
+
 API DOC:
     - /coreapi/contacts/
         - get   :get list
@@ -26,123 +30,312 @@ API DOC:
 
 """
 
-class ContactList(APIView):
+
+class GenericList(APIView):
+    MODEL_CLASS : ClassVar = None
+    SERIALIZER_CLASS : ClassVar = None
+
+    def __init__(self,*args,**kwargs):
+        if not self.MODEL_CLASS or not self.SERIALIZER_CLASS:
+            raise NotImplementedError("Set MODEL_CLASS and SERIALIZER_CLASS")
+
+        super(GenericList,self).__init__(*args,**kwargs)
+
     def get(self,request):
-        _data = Contact_Details.objects.filter(user_fk=request.user).all()
-        return Response(Contact_Details_Serializer(_data,many=True).data)
+        _data = self.MODEL_CLASS.objects.filter(user_fk=request.user).all()
+        return Response(self.SERIALIZER_CLASS(_data,many=True).data)
 
     def post(self,request):
-        _s = Contact_Details_Serializer(data=request.data)
+        _s = self.SERIALIZER_CLASS(data=request.data)
         _s.is_valid(raise_exception=True)
 
-        contact_info = _s.save(user_fk=request.user)
-        contact_info.save()
+        if hasattr(self.SERIALIZER_CLASS.Meta,'fks'):
+            assert isinstance(self.SERIALIZER_CLASS.Meta.fks,list)
+            for fk in self.SERIALIZER_CLASS.Meta.fks:
+                if fk in _s.validated_data and _s.validated_data[fk].user_fk != request.user:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
+
+
+        obj = _s.save(user_fk=request.user)
+        obj.save()
 
         return Response(_s.data)
+    
+class GenericDetail(APIView):
+    MODEL_CLASS : ClassVar = None
+    SERIALIZER_CLASS : ClassVar = None
 
-class ContactDetail(APIView):
-    def get_contact_by_id(self,id:int, user):
+    def get_object_by_id(self,id:int, user):
         """
-        If object found where id=<id> and requesting user is the creator, returns object
-        else returns None
-        """
-        try:
-            contact = Contact_Details.objects.get(id=id)
-        except Contact_Details.DoesNotExist:
-            return None  
-        if contact.user_fk != user:
-            return None
-
-        return contact
-
-
-    def get(self,request, pk:int):
-        contact = self.get_contact_by_id(pk,request.user)
-        if not contact:
-            return Response(data={"msg":"Forbidden"},status=status.HTTP_403_FORBIDDEN)
-
-        return Response(Contact_Details_Serializer(contact).data)
-
-    def delete(self,request,pk):
-        contact = self.get_contact_by_id(pk,request.user)
-        if not contact:
-            return Response(data={"msg":"Forbidden"},status=status.HTTP_403_FORBIDDEN)
-
-        contact.delete()
-        return Response({"msg":"Deleted"})
-
-    def put(self,request,pk):
-        contact = self.get_contact_by_id(pk,request.user)
-        if not contact:
-            return Response(data={"msg":"Forbidden"},status=status.HTTP_403_FORBIDDEN)
-            
-        _s = Contact_Details_Serializer(data=request.data)
-        _s.is_valid(raise_exception=True)
-        contact.label = _s.validated_data["label"]
-        contact.value = _s.validated_data["value"]
-        contact.save()
-
-
-        return Response({"msg":"Updated"})
-
-
-class SkillList(APIView):
-    def get(self,request):
-        _data = Skills.objects.filter(user_fk=request.user).all()
-        return Response(Skills_Serializer(_data,many=True).data)
-
-    def post(self,request):
-        _s = Skills_Serializer(data=request.data)
-        _s.is_valid(raise_exception=True)
-
-        skill = _s.save(user_fk=request.user)
-        skill.save()
-
-        return Response(_s.data)
-
-class SkillDetail(APIView):
-    def get_skill_by_id(self,id:int, user):
-        """
-        If object found where id=<id> and requesting user is the creator, returns object
-        else returns None
+        If object found where id=<id> and requesting user is the creator, returns (object,status)
+        else returns (None,status)
         """
         try:
-            skill = Skills.objects.get(id=id)
-        except Skills.DoesNotExist:
-            return None  
-        if skill.user_fk != user:
-            return None
+            obj = self.MODEL_CLASS.objects.get(id=id)
+        except self.MODEL_CLASS.DoesNotExist:
+            return None,status.HTTP_404_NOT_FOUND 
+        if obj.user_fk != user:
+            return None,status.HTTP_403_FORBIDDEN
 
-        return skill
+        return obj,status.HTTP_200_OK
 
     def get(self,request, pk:int):
-        skill = self.get_skill_by_id(pk,request.user)
-        if not skill:
-            return Response(data={"msg":"Forbidden"},status=status.HTTP_403_FORBIDDEN)
+        """
+        Return object for given id
+        """
+        _obj,_code = self.get_object_by_id(pk,request.user)
+        if not _obj:
+            return Response(status=_code)
 
-        return Response(Skills_Serializer(skill).data)
+        return Response(self.SERIALIZER_CLASS(_obj).data)
 
     def delete(self,request,pk):
-        skill = self.get_skill_by_id(pk,request.user)
-        if not skill:
-            return Response(data={"msg":"Forbidden"},status=status.HTTP_403_FORBIDDEN)
+        _obj,_code = self.get_object_by_id(pk,request.user)
+        if not _obj:
+            return Response(status=_code)
 
-        skill.delete()
+        _obj.delete()
         return Response({"msg":"Deleted"})
     
     def put(self,request,pk):
-        skill = self.get_skill_by_id(pk,request.user)
-        if not skill:
-            return Response(data={"msg":"Forbidden"},status=status.HTTP_403_FORBIDDEN)
+        """
+        Update existing object
+        """
+        _obj,_code = self.get_object_by_id(pk,request.user)
+        if not _obj:
+            return Response(status=_code)
             
-        _s = Skills_Serializer(data=request.data)
+        _s = self.SERIALIZER_CLASS(data=request.data)
         _s.is_valid(raise_exception=True)
-        skill.name = _s.validated_data["name"]
-        skill.score = _s.validated_data["score"]
-        skill.save()
 
+        if hasattr(self.SERIALIZER_CLASS.Meta,'fks'):
+            assert isinstance(self.SERIALIZER_CLASS.Meta.fks,list)
+            for fk in self.SERIALIZER_CLASS.Meta.fks:
+                if fk in _s.validated_data and _s.validated_data[fk].user_fk != request.user:
+                    return Response(status=status.HTTP_403_FORBIDDEN)
 
+        for field,value in _s.validated_data.items():
+            setattr(_obj,field,value)        
+
+        _obj.save()
         return Response({"msg":"Updated"}) 
 
+
+class ContactList(GenericList):
+    MODEL_CLASS = Contact_Details
+    SERIALIZER_CLASS = Contact_Details_Serializer
+
+class ContactDetail(GenericDetail):
+    MODEL_CLASS = Contact_Details
+    SERIALIZER_CLASS = Contact_Details_Serializer
+
+
+class SkillList(GenericList):
+    MODEL_CLASS = Skills
+    SERIALIZER_CLASS = Skills_Serializer
+
+class SkillDetail(GenericDetail):
+    MODEL_CLASS = Skills
+    SERIALIZER_CLASS = Skills_Serializer
+
+
+class JobProfileList(GenericList):
+    MODEL_CLASS = Job_Profiles
+    SERIALIZER_CLASS = Job_Profiles_Serializer
+
+class JobProfileDetail(GenericDetail):
+    MODEL_CLASS = Job_Profiles
+    SERIALIZER_CLASS = Job_Profiles_Serializer
+
+
+class ProfileSummaryList(GenericList):
+    MODEL_CLASS = Profile_Summaries
+    SERIALIZER_CLASS = Profile_Summaries_Serializer
+
+class ProfileSummaryDetail(GenericDetail):
+    MODEL_CLASS = Profile_Summaries
+    SERIALIZER_CLASS = Profile_Summaries_Serializer
+
+
+class EducationList(GenericList):
+    MODEL_CLASS = Educations
+    SERIALIZER_CLASS = Educations_Serializer
+
+class EducationDetail(GenericDetail):
+    MODEL_CLASS = Educations
+    SERIALIZER_CLASS = Educations_Serializer
+
+
+class ProjectList(GenericList):
+    MODEL_CLASS = Projects
+    SERIALIZER_CLASS = Projects_Serializer
+
+class ProjectDetail(GenericDetail):
+    MODEL_CLASS = Projects
+    SERIALIZER_CLASS = Projects_Serializer
+
+
+class ProjectSummaryList(GenericList):
+    MODEL_CLASS = Projects_Summaries
+    SERIALIZER_CLASS = Projects_Summaries_Serializer
+
+class ProjectSummaryDetail(GenericDetail):
+    MODEL_CLASS = Projects_Summaries
+    SERIALIZER_CLASS = Projects_Summaries_Serializer
+
+
+class ResumeList(GenericList):
+    MODEL_CLASS = Resumes
+    SERIALIZER_CLASS = Resumes_Serializer
+
+class ResumeDetail(GenericDetail):
+    MODEL_CLASS = Resumes
+    SERIALIZER_CLASS = Resumes_Serializer
+
+
+# ----- Resume maping ------
+# Functionalities: Get lists of mapping, create mapping, delete mapping
+
+class GenericResumeMappingList(APIView):
+    MAP_MODEL : ClassVar = None
+    SERIALIZER_CLASS: ClassVar = None
+
+    def __init__(self,*args,**kwargs):
+        if not self.MAP_MODEL or not self.SERIALIZER_CLASS:
+            raise NotImplementedError("Set MAP_MODEL and SERIALIZER_CLASS")
+
+        super(GenericResumeMappingList,self).__init__(*args,**kwargs)
+
+
+    def get_object_by_id(self,id:int,user,*,model_class):
+        try:
+            obj = model_class.objects.get(id=id)
+        except model_class.DoesNotExist:
+            return None,status.HTTP_404_NOT_FOUND 
+        if obj.user_fk != user:
+            return None,status.HTTP_403_FORBIDDEN
+
+        return obj, status.HTTP_200_OK
+    
+    def is_fk_owner_valid(self,_s : serializers.ModelSerializer, user):
+        """
+        Checks whether logged in user is the owner of the fk sent
+        """
+        if hasattr(self.SERIALIZER_CLASS.Meta,'fks'):
+            assert isinstance(self.SERIALIZER_CLASS.Meta.fks,list)
+            for fk in self.SERIALIZER_CLASS.Meta.fks:
+                if fk in _s.validated_data and _s.validated_data[fk].user_fk != user:
+                    return False
+        return True
+
+    def get(self,request,resume_id:int):
+        _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
+        if not _resume:
+            return Response(status=_status)
+
+        objs = self.MAP_MODEL.objects.filter(resume_fk=_resume).all()
+
+        return Response(self.SERIALIZER_CLASS(objs,many=True).data)
+
+    def post(self,request,resume_id):
+        _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
+        if not _resume:
+            return Response(status=_status)
+
+        _s = self.SERIALIZER_CLASS(data=request.data)
+        _s.is_valid(raise_exception=True)
+        if not self.is_fk_owner_valid(_s,request.user):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        obj = _s.save(resume_fk=_resume)
+        obj.save()
+
+        return Response(self.SERIALIZER_CLASS(obj).data)
+    
+class GenericResumeMappingDetail(APIView):
+    MAP_MODEL : ClassVar = None
+    SERIALIZER_CLASS: ClassVar = None
+
+    def __init__(self,*args,**kwargs):
+        if not self.MAP_MODEL or not self.SERIALIZER_CLASS:
+            raise NotImplementedError("Set MAP_MODEL and SERIALIZER_CLASS")
+
+        super(GenericResumeMappingDetail,self).__init__(*args,**kwargs)
+
+    def get_object_by_id(self,id:int,user,*,model_class):
+        try:
+            obj = model_class.objects.get(id=id)
+        except model_class.DoesNotExist:
+            return None,status.HTTP_404_NOT_FOUND 
+        if obj.user_fk != user:
+            return None,status.HTTP_403_FORBIDDEN
+
+        return obj, status.HTTP_200_OK
+    
+    def delete(self,request,resume_id,cd_id):
+        _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
+        if not _resume:
+            return Response(status=_status)
+
+        _cd, _status = self.get_object_by_id(cd_id,request.user,model_class=Contact_Details)
+        if not _cd:
+            return Response(status=_status)
+
+        try:
+            Resume_Contact_Detail_Map.objects.get(contact_details_fk=_cd,resume_fk=_resume).delete()            
+        except Resume_Contact_Detail_Map.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"msg":"Deleted"})
+
+
+class Resume_CD_List(GenericResumeMappingList):
+    MAP_MODEL = Resume_Contact_Detail_Map
+    SERIALIZER_CLASS = Resume_CD_S
+
+class Resume_CD_Detail(APIView):
+    def get_object_by_id(self,id:int,user,*,model_class):
+        try:
+            obj = model_class.objects.get(id=id)
+        except model_class.DoesNotExist:
+            return None,status.HTTP_404_NOT_FOUND 
+        if obj.user_fk != user:
+            return None,status.HTTP_403_FORBIDDEN
+
+        return obj, status.HTTP_200_OK
+
+    def delete(self,request,resume_id,cd_id):
+        _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
+        if not _resume:
+            return Response(status=_status)
+
+        _cd, _status = self.get_object_by_id(cd_id,request.user,model_class=Contact_Details)
+        if not _cd:
+            return Response(status=_status)
+
+        try:
+            Resume_Contact_Detail_Map.objects.get(contact_details_fk=_cd,resume_fk=_resume).delete()            
+        except Resume_Contact_Detail_Map.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"msg":"Deleted"})
+        
+
+    
+    
+
+        
+
+
+            
+        
+
+
+
+
+
+
+    
+    
 
 
