@@ -66,7 +66,7 @@ class Resumes(models.Model):
 
 class Resume_Contact_Detail_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0)
+    position = models.IntegerField(default=0,unique=True)
     contact_details_fk = models.ForeignKey(Contact_Details,on_delete=models.CASCADE)
 
 class Resume_Skill_Map(models.Model):
@@ -77,7 +77,7 @@ class Resume_Skill_Map(models.Model):
 class Resume_Project_Summary_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     position = models.IntegerField(default=0,unique=True)
-    project_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.CASCADE)
+    project_summary_fk = models.ForeignKey(Projects_Summaries,on_delete=models.CASCADE)
 
 class Resume_Work_History_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
@@ -99,9 +99,10 @@ class Resume_Education_Project_Summary_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     resume_edu_fk = models.ForeignKey(Resume_Education_Map,on_delete=models.CASCADE)
     project_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0)
+    position = models.IntegerField(default=0,unique=True)
 
 class Resume_Content_Section_Positions(models.Model):
+    user_fk = models.ForeignKey(RB_User,on_delete=models.CASCADE)
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     section_name = models.TextField()
     position = models.IntegerField(default=0,unique=True)

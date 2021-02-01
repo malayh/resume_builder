@@ -1,6 +1,8 @@
 from rest_framework import serializers
-
 from .models import *
+
+# TODO: Resume_Work_History_Project_Summary_Map has to be done differently
+# TODO: Resume_Education_Project_Summary_Map
 
 class Contact_Details_Serializer(serializers.ModelSerializer):
     class Meta:
@@ -38,6 +40,7 @@ class Projects_Summaries_Serializer(serializers.ModelSerializer):
         fields = ['id','project_fk','summary']
         fks = ["project_fk"]
 
+
 class Resumes_Serializer(serializers.ModelSerializer):
     class Meta:
         model = Resumes
@@ -68,13 +71,16 @@ class Resume_WH_S(serializers.ModelSerializer):
         fields = ['position','job_profile_fk']
         fks = ['job_profile_fk']
 
-# TODO: Resume_Work_History_Project_Summary_Map has to be done differently
-# TODO: Resume_Education_Project_Summary_Map
-
 class Resume_Edu_S(serializers.ModelSerializer):
     class Meta:
         model = Resume_Education_Map
         fields = ['position','education_fk']
         fks = ['education_fk']
+
+class Resume_Section_S(serializers.ModelSerializer):
+    class Meta:
+        model = Resume_Content_Section_Positions
+        fields = ['id','section_name','position']
+
 
 
