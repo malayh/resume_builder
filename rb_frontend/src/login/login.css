@@ -8,7 +8,7 @@ body{
 #login-page {  
   width: 100%;
   padding: 4vw;
-  padding-top: 15vw;
+  padding-top: 0vw;
   /* background-color: blue; */
 }
 #login-form {
@@ -60,16 +60,28 @@ body{
   display: none;
 }
 
-
+#login-form .error-msg {
+  font-size: 10pt;
+  color: red;
+  font-weight: bold;
+}
 
 
 
 #login-content {
   width: 100%;
   height: 100vh;
-  background-color: green;
+  background-color: #73af75;
 }
 .nopadding {
   padding: 0 !important;
   margin: 0 !important;
+}
+
+#app_name
+{
+  padding: 4vw;
+  padding-bottom: 1vw;
+  font-weight: bold;
+  color: #4CAF50;
 }
