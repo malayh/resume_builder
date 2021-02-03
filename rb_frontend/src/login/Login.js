@@ -1,47 +1,52 @@
 import React from 'react';
 import $ from 'jquery';
-import {storageAvailable} from '../util'
+import {storageAvailable , isValidEmail} from '../util'
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './login.css';
+import '../main.css'
 
 export default class LoginPage extends React.Component {
+    
     constructor(props){
         super(props);
         this.toggleSignup = this.toggleSignup.bind(this);
         this.handleLogin = this.handleLogin.bind(this);
+        this.handleSignup = this.handleSignup.bind(this);
 
         this.state = {
             formError:""
         }
-
-        this.loginUrl = "http://localhost:8000/users/login/";
+        this.baseUrl = "http://localhost:8000/";
     }
-
 
     toggleSignup() {
         $('#login-form form').animate({height: "toggle", opacity: "toggle"}, "slow");
         this.setState({formError:""});
     }
 
-    validateEmail(email) {
-        if (/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(email))
-            return true;
-        return false;
+    handleLoginSuccessful(resp){
+        if(resp.status === 404){
+            this.setState({formError:"Invalid credentials"});
+            return;
+        }
+
+        if(resp.status === 400){
+            this.setState({formError:"Provide both email and password"});
+            return;
+        }
+        
+        if(!('token' in resp.data)){
+            this.setState({formError:"Sorry, Something went wrong."});
+            return;
+
+        }
+
+        window.localStorage.setItem("rb_access_token",resp.data.token);
+        this.setState({formError:""});
+
     }
 
-    handleLoginSuccessful(data,status){
-        if(status == 404){
-            this.setState({formError:"Invalid Credentials."});
-            return;
-        }
-        else if (status == 400){
-            this.setState({formError:"Please provide both email and password."});
-            return;
-        }
-    
-        console.log(data.token);
-    }
     handleLoginFailure(){
         this.setState({formError:"Sorry, Something went wrong."});
     }
@@ -49,7 +54,7 @@ export default class LoginPage extends React.Component {
     handleLogin(e){
         e.preventDefault();
 
-        if(!this.validateEmail(e.target.email.value)){
+        if(!isValidEmail(e.target.email.value)){
             this.setState({formError:"Invalid Email"});
             return;
         }
@@ -60,15 +65,71 @@ export default class LoginPage extends React.Component {
             body    : JSON.stringify({ email: e.target.email.value, password: e.target.password.value })
         };
         
-        // fetch(this.loginUrl,requestOpts)
-        //     .then(response => response.json())
-        //     .then(data => this.handleLoginSuccessful(data), error => this.handleLoginFailure(error));
 
-        fetch(this.loginUrl,requestOpts)
-            .then((response) => { return { data : response.json(), status: response.status}; })
-            .then((resp) => {this.handleLoginSuccessful(resp.data,resp.status)}, error => this.handleLoginFailure());
+        fetch(this.baseUrl+'users/login/',requestOpts)
+            .then(resp => resp.json()
+                .then(body => ({data:body, status:resp.status})))                
+            .then(data => this.handleLoginSuccessful(data), error => this.handleLoginFailure(error));
+    }
+
+    handleSignupSuccess(resp){
+        if(resp.status === 406 ){
+            this.setState({formError: resp.data.msg})
+            return;
+        }
+        if(resp.status == 400){
+            this.setState({formError:"Sorry, Something went wrong."});
+            return;
+        }
+
+        // TODO: login if signup is successful
+    }
+
+    handleSignup(e){
+        e.preventDefault();
+        
+        if(e.target.name.value === ""){
+            this.setState({formError:"Please enter your full name."});
+            return;
+        }
+
+        if(!isValidEmail(e.target.email.value)){
+            this.setState({formError:"Please enter a valid email address."});
+            return;
+        }
+
+        if(e.target.password1.value === "" )
+        {
+            this.setState({formError:"Password cannot be empty"});
+            return;
+        }
+
+        if(e.target.password2.value === "" )
+        {
+            this.setState({formError:"Confirm your password"});
+            return;
+        }
+
+        if(e.target.password1.value !== e.target.password2.value){
+            this.setState({formError:"Passwords don't match."});
+            return;
+        }
+
+        const requestOpts = {
+            method  : "POST",
+            headers : { 'Content-Type': 'application/json' },
+            body    : JSON.stringify({ email: e.target.email.value, password: e.target.password1.value, name: e.target.name.value})
+        };
+
+        this.setState({formError:""});
+
+        fetch(this.baseUrl+'users/signup/',requestOpts)
+            .then(resp => resp.json()
+                .then(body => ({data:body, status:resp.status})))                
+            .then(data => this.handleSignupSuccess(data), error => this.setState({formError:"Sorry, Something went wrong."}));
 
     }
+
 
     render(){
         const content = (
@@ -83,11 +144,11 @@ export default class LoginPage extends React.Component {
         const login_singup = (
             <div id="login-page">
                 <div id="login-form">
-                <form className="register-form">
-                    <input type="text" placeholder="Name"/>
-                    <input type="text" placeholder="Email address"/>
-                    <input type="password" placeholder="Password"/>
-                    <input type="password" placeholder="Confirm password"/>
+                <form className="register-form" onSubmit={this.handleSignup}>
+                    <input type="text" name="name" placeholder="Name"/>
+                    <input type="text" name="email" placeholder="Email address"/>
+                    <input type="password" name="password1" placeholder="Password"/>
+                    <input type="password" name="password2" placeholder="Confirm password"/>
                     <p className="error-msg">{this.state.formError}</p>
                     <button>Create</button>
                     <p className="message">Already registered? <a href="#" onClick={this.toggleSignup}>Sign In</a></p>

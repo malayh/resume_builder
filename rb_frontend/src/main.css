@@ -1,0 +1,36 @@
+@import url(https://fonts.googleapis.com/css?family=Montserrat:300);
+
+body{
+  font-family: "Montserrat", sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* --------------- Nav bar --------------- */
+#main-nav{
+    display: flex;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    background-color: #4CAF50 !important;
+    color: rgb(255, 255, 255) !important;
+}
+#main-nav .navbar-brand{
+    padding: 1vw;
+    margin: 1vw;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#main-nav .nav-item {
+    height: 100%;
+    padding: 1vw;
+    margin-left: 1vw;
+}
+
+.navbar-nav .active
+{
+    background-color:  #377c39 !important;
+}
+    
