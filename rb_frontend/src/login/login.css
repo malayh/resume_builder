@@ -46,6 +46,9 @@
   color: #b3b3b3;
   font-size: 14px;
 }
+#login-form .message a{
+  cursor: pointer;
+}
 #login-form .message a {
   color: #4CAF50;
   text-decoration: none;

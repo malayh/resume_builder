@@ -9,6 +9,7 @@ import '../main.css'
 export default class LoginPage extends React.Component {
     
     constructor(props){
+        // @props: onLogin
         super(props);
         this.toggleSignup = this.toggleSignup.bind(this);
         this.handleLogin = this.handleLogin.bind(this);
@@ -17,7 +18,7 @@ export default class LoginPage extends React.Component {
         this.state = {
             formError:""
         }
-        this.baseUrl = "http://localhost:8000/";
+        this.baseApiUrl = "http://localhost:8000/";
     }
 
     toggleSignup() {
@@ -44,6 +45,7 @@ export default class LoginPage extends React.Component {
 
         window.localStorage.setItem("rb_access_token",resp.data.token);
         this.setState({formError:""});
+        this.props.onLogin();
 
     }
 
@@ -66,13 +68,14 @@ export default class LoginPage extends React.Component {
         };
         
 
-        fetch(this.baseUrl+'users/login/',requestOpts)
+        fetch(this.baseApiUrl+'users/login/',requestOpts)
             .then(resp => resp.json()
                 .then(body => ({data:body, status:resp.status})))                
             .then(data => this.handleLoginSuccessful(data), error => this.handleLoginFailure(error));
     }
 
-    handleSignupSuccess(resp){
+    handleSignupSuccess(resp,e){
+        console.log(e);
         if(resp.status === 406 ){
             this.setState({formError: resp.data.msg})
             return;
@@ -82,7 +85,7 @@ export default class LoginPage extends React.Component {
             return;
         }
 
-        // TODO: login if signup is successful
+        this.handleLogin(e);
     }
 
     handleSignup(e){
@@ -98,7 +101,7 @@ export default class LoginPage extends React.Component {
             return;
         }
 
-        if(e.target.password1.value === "" )
+        if(e.target.password.value === "" )
         {
             this.setState({formError:"Password cannot be empty"});
             return;
@@ -110,7 +113,7 @@ export default class LoginPage extends React.Component {
             return;
         }
 
-        if(e.target.password1.value !== e.target.password2.value){
+        if(e.target.password.value !== e.target.password2.value){
             this.setState({formError:"Passwords don't match."});
             return;
         }
@@ -118,15 +121,15 @@ export default class LoginPage extends React.Component {
         const requestOpts = {
             method  : "POST",
             headers : { 'Content-Type': 'application/json' },
-            body    : JSON.stringify({ email: e.target.email.value, password: e.target.password1.value, name: e.target.name.value})
+            body    : JSON.stringify({ email: e.target.email.value, password: e.target.password.value, name: e.target.name.value})
         };
 
         this.setState({formError:""});
 
-        fetch(this.baseUrl+'users/signup/',requestOpts)
+        fetch(this.baseApiUrl+'users/signup/',requestOpts)
             .then(resp => resp.json()
                 .then(body => ({data:body, status:resp.status})))                
-            .then(data => this.handleSignupSuccess(data), error => this.setState({formError:"Sorry, Something went wrong."}));
+            .then(data => this.handleSignupSuccess(data,e), error => this.setState({formError:"Sorry, Something went wrong."}));
 
     }
 
@@ -147,18 +150,18 @@ export default class LoginPage extends React.Component {
                 <form className="register-form" onSubmit={this.handleSignup}>
                     <input type="text" name="name" placeholder="Name"/>
                     <input type="text" name="email" placeholder="Email address"/>
-                    <input type="password" name="password1" placeholder="Password"/>
+                    <input type="password" name="password" placeholder="Password"/>
                     <input type="password" name="password2" placeholder="Confirm password"/>
                     <p className="error-msg">{this.state.formError}</p>
                     <button>Create</button>
-                    <p className="message">Already registered? <a href="#" onClick={this.toggleSignup}>Sign In</a></p>
+                    <p className="message">Already registered? <a onClick={this.toggleSignup}>Sign In</a></p>
                 </form>
                 <form className="login-form" onSubmit={this.handleLogin}>
                     <input type="text" name="email" placeholder="Email"/>
                     <input type="password" name="password" placeholder="Password"/>
                     <p className="error-msg">{this.state.formError}</p>
                     <button type="submit" >Login</button>
-                    <p className="message">Not registered? <a href="#" onClick={this.toggleSignup}>Create an account</a></p>
+                    <p className="message">Not registered? <a onClick={this.toggleSignup}>Create an account</a></p>
                 </form>
                 </div>
             </div>
