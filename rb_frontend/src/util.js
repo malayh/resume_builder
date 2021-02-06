@@ -5,7 +5,7 @@ export function isValidEmail(email) {
 }
 
 // Rrturn true if storage available
-export function storageAvailable(type) {
+export default function storageAvailable(type) {
     var storage;
     try {
         storage = window[type];

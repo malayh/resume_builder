@@ -4,7 +4,7 @@ import {storageAvailable , isValidEmail} from '../util'
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './login.css';
-import '../main.css'
+import '../main.css';
 
 export default class LoginPage extends React.Component {
     

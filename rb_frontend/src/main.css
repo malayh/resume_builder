@@ -7,7 +7,7 @@ body{
 }
 
 
-/* --------------- Nav bar --------------- */
+/* --------------- START : Nav bar --------------- */
 #main-nav{
     display: flex;
     width: 100%;
@@ -29,8 +29,9 @@ body{
     margin-left: 1vw;
 }
 
-.navbar-nav .active
-{
+.navbar-nav .active{
     background-color:  #377c39 !important;
 }
-    
+/* ---------------- END : Nav bar ------------------ */
+
+
