@@ -1,5 +1,8 @@
 .history-section{
-    background-color:  #8cca8e;
+    border: 1px solid #163117;
+    border-radius: 0.6em;
+
+    /* background-color:  #8cca8e; */
     /* background-color:  #dbdbdb; */
 
     margin: 1em;
@@ -10,9 +13,12 @@
     height: 100%;
     margin: 0;
     padding: 0.5em;
-    color: white;
-    background-color: #163117 ;
+    /* color: white; */
+    /* background-color: #163117 ; */
     font-size: 14pt;
+
+    font-weight: bold;
+    border-bottom: 1px solid black ;
 }
 .section-content{
     width: 100%;
@@ -21,10 +27,12 @@
 }
 
 .history-section .add-button{
-    background-color: #163117;
+    /* background-color: #163117; */
+    margin: 0;
     padding: 1em;
     cursor: pointer;
-    border-left: 1px solid #8cca8e;
+    border-bottom: 1px solid #163117;
+    /* border-radius: 25%; */
 
 }
 .section-content input{
@@ -34,19 +42,72 @@
 .section-content .label{
     margin: 0.3em;
     padding-left: 0.3em;
-    border-left: 5px solid #377c39;
-    background-color: #ffffff
+    /* border-left: 5px solid #377c39; */
+    /* background-color: #afafaf; */
+    font-weight: bold;
+    font-size: 11pt;
 }
 .section-content .value{
     margin: 0.3em;
-    border-left: 5px solid #000000;
+    /* border-left: 5px solid #000000; */
     padding-left: 0.3em;
-    background-color: #e2dfdf;
+    /* background-color: #e2dfdf; */
+    border-bottom: 1px dashed #163117;
+
 }
 
 .history-section .delete-button{
-    background-color: #8cca8e;
+    /* background-color: #8cca8e; */
     padding: 1em;
     cursor: pointer;
-    border-left: 1px solid #163117;
+    /* border-bottom: 1px dashed #163117; */
+}
+
+
+/*  ---- Job profile component ---- */
+.job-profile {
+    margin: 0.3em;
+    padding: 0.3em;
+}
+.job-profile .profile-name{
+    font-size: 14pt;
+    font-weight: bold;
+
+}
+.job-profile .profile-name svg{
+    margin-left: 1em;
+    cursor: pointer;
+}
+.job-profile .company-name{
+    display: inline;
+    margin: 0.3em;
+    font-size: 11pt;
+    font-style: italic;
+}
+.job-profile .location{
+    margin: 0.3em;
+    padding-left: 0.4em;
+    border-left: 1px solid rgb(83, 83, 83);
+}
+
+.job-profile .timeframe{
+    margin: 0.3em;
+}
+.job-profile .timeframe span{
+    padding: 1em;
+    padding-left: 0;
+}
+.job-profile .is-present{
+    margin: 0.3em;
+}
+
+.is-present .form-check-input{
+    position: relative;
+    margin: 0em;
+    margin-left: 0.5em;
+}
+
+.job-profile input {
+    border-left: None;
+    border-bottom: 1px dashed black; 
 }

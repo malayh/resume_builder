@@ -1,69 +1,17 @@
 import React from 'react';
+import DatePicker from 'react-datepicker';
 
+import 'react-datepicker/dist/react-datepicker.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './historypage.css';
 
-class EditableDiv extends React.Component{
-    constructor({content,onUpdate,className,...rest}){
-        // @props: content: thing to display
-        // @props: onUpdate: function to be called when content is updated. Takes on argument
-        super(rest);
-        this.state = {
-            value : content,
-            placeholder : ''
-        }
+import {
+    delete_icon,add_icon,edit_icon,done_icon,
+    EditableDiv,
+    getDisplayDate, parseToDate
+} from './components';
 
-        this.inputRef = React.createRef();
-        this.divRef = React.createRef();
 
-        this.handleClick = this.handleClick.bind(this);
-        this.handleBlur = this.handleBlur.bind(this);
-        this.handleChange = this.handleChange.bind(this);
-    }
-
-    componentDidMount(){
-        this.inputRef.current.style.display = 'None';
-        if(this.state.value == '')
-            this.divRef.current.click();
-    }
-
-    handleClick(){
-        this.divRef.current.style.display = 'None';
-        this.inputRef.current.style.display = '';
-        this.inputRef.current.focus();
-    }
-    handleBlur(){
-        if(this.inputRef.current.value.length<1){
-            this.setState({placeholder:'Enter a value'});
-            this.inputRef.current.focus();
-            return;
-        }
-        this.divRef.current.style.display = '';
-        this.inputRef.current.style.display = 'None';
-        this.props.onUpdate(this.state.value);
-    }
-    handleChange(e){
-        this.setState({value : e.target.value});
-    }
-    render(){
-        return (
-            <div>
-                <div 
-                    onClick={this.handleClick} 
-                    ref={this.divRef}>
-                        {this.state.value}
-                </div>
-                <input 
-                    onBlur={this.handleBlur} 
-                    onChange={this.handleChange} 
-                    ref={this.inputRef} 
-                    placeholder={this.state.placeholder} 
-                    value={this.state.value}
-                />
-            </div>
-        );
-    }
-}
 
 
 class SkillSection extends React.Component{
@@ -165,13 +113,6 @@ class SkillSection extends React.Component{
 
     getSkillSection(skill_id){
         // Returns a skill row
-        const delete_icon = (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-trash-fill" viewBox="0 0 16 16">
-                <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
-            </svg>
-        );
-
-
         var skill_row = (
             <div className="row" key={skill_id}>
                 <div className="col-10 nopadding text-wrap">
@@ -203,7 +144,7 @@ class SkillSection extends React.Component{
         // 
         // I am making two calls to create on entity. THAT IS BAD
 
-        var new_skill = {name:'Default',score:1}
+        var new_skill = {name:'Skill Name',score:1}
         var skills_copy = Object.assign({},this.state.skills);
         skills_copy[''+this.nextNegativeId] = new_skill;
 
@@ -219,13 +160,6 @@ class SkillSection extends React.Component{
     }
 
     render(){
-        const add_icon = (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
-                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
-            </svg>
-        );
-
-
         var main = (
             <div className="history-section">
                 <div className="container-fluid">
@@ -315,13 +249,6 @@ class ContactSection extends React.Component{
     }
     getContactRow(id){
         // console.log(this.state.contacts[id]);
-        const delete_icon = (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-trash-fill" viewBox="0 0 16 16">
-                <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
-            </svg>
-        );
-
-
         var row = (
             <div className="row" key={id}>
                 <div className="col-10 nopadding text-wrap">
@@ -366,11 +293,6 @@ class ContactSection extends React.Component{
         });
     }
     render(){
-        const add_icon = (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
-                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
-            </svg>
-        );
         var main = (
             <div className="history-section">
                 <div className="container-fluid">
@@ -397,16 +319,249 @@ class ContactSection extends React.Component{
     }
 }
 
+class JobProfile extends React.Component{
+    constructor(props){
+        // @props: id: Job profile id       
+        // @props: profile, company, location, start_time, end_time, is_current     
+        // @props: onUpdate: To be called when state updates. Need to pass the entire this.state as arg
+        // @props: onDelete: To be called when delete is pressed. Need to pass id as arg.
+        super(props);
+        this.state = {
+            id      : this.props.id,
+            profile : this.props.profile,
+            company : this.props.company,
+            location: this.props.location,
+            start_time: this.props.start_time,
+            end_time: this.props.end_time,
+            is_current: this.props.is_current            
+        }
+
+        this.dispRef = React.createRef();
+        this.formRef = React.createRef();
+
+        this.onEdit = this.onEdit.bind(this);
+        this.onSave = this.onSave.bind(this);
+
+        this.prevState = null;
+    }
+
+    componentDidMount(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+    }
+    onEdit(){
+        this.dispRef.current.style.display='None';
+        this.formRef.current.style.display='';
+        this.prevState = Object.assign({},this.state);        
+    }
+    onSave(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+
+        for(var key in this.prevState){
+            if(this.state[key] !== this.prevState[key]){
+                this.prevState = null;
+                this.props.onChange(this.state)
+                break;
+            }
+        }
+
+    }
+
+    render(){
+        var main = (
+            <div className="row" ref={this.dispRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>{this.state.profile}</span>
+                                <span onClick={this.onEdit}>{edit_icon}</span>
+                            </div>
+                            { this.state.company && <span className="company-name">{this.state.company}</span>}
+                            { this.state.location && <span className="location">{this.state.location}</span>}
+                            <div className="timeframe">
+                                { this.state.start_time && <span className="start-time">From: {getDisplayDate(this.state.start_time)}</span>}
+                                { this.state.end_time && <span className="end-time text-wrap">To: {getDisplayDate(this.state.end_time)}</span>}
+                            </div>
+                            <div className="is-present">
+                                {this.state.is_current===true && <span>Currently Work here</span>}
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div className="col-2 nopadding">
+                    <div className="delete-button" onClick={()=>{this.props.onDelete(this.state.id)}}>
+                        {delete_icon}
+                    </div>
+                </div>
+            </div>
+        );
+
+        var form = (
+            <div className="row" ref={this.formRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>
+                                    <input placeholder="Job profile" 
+                                            value={this.state.profile} 
+                                            onChange={(val)=>this.setState({profile:val.target.value})}/>
+                                </span> 
+                                <span onClick={this.onSave}>{done_icon}</span>
+                            </div>
+                            
+                            <input className="company-name" 
+                                    placeholder="Company Name" 
+                                    value={this.state.company} 
+                                    onChange={(val)=>this.setState({company:val.target.value})} />
+                            
+                            <input className="location" 
+                                    placeholder="Location" 
+                                    value={this.state.location}
+                                    onChange={(val)=>this.setState({location:val.target.value})}/>
+                            
+                            <div className="timeframe">
+                                <div className="start-time">
+                                    Start time: <DatePicker selected={this.state.start_time} onChange={(date)=>{this.setState({start_time:date})}}/>
+                                </div>
+                                <div className="end-time">
+                                    End time: <DatePicker selected={this.state.end_time} onChange={(date)=>{this.setState({end_time:date})}}/>
+                                </div>
+                            </div>
+
+                            <div className="is-present">
+                                <label className="form-check-label" for="exampleCheck1">Currently Work here?</label>
+                                <input type="checkbox" 
+                                        className="form-check-input" 
+                                        id="exampleCheck1" 
+                                        defaultChecked={this.state.is_current} 
+                                        onChange={(e)=>this.setState({is_current:e.target.checked})}/>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        return <div key={this.state.id}>{main}{form}</div>
+    }
+}
+
+
 class ExperienceSection extends React.Component{
     constructor(props){
         super(props);
+
+        this.state = {
+            xp : {}
+        }
+        this.onUpdate = this.onUpdate.bind(this);
+        this.onDelete = this.onDelete.bind(this);
+        this.onAdd = this.onAdd.bind(this);
+        
+        this.baseApiUrl = 'http://localhost:8000/coreapi/';
+        this.authHeaders = { 
+            'Content-Type':'application/json',
+            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
+        };
     }
-    render(){
-        const add_icon = (
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white" class="bi bi-plus-circle-fill" viewBox="0 0 16 16">
-                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
-            </svg>
-        );
+
+    onUpdate(obj){
+        var xp_copy = Object.assign(this.state.xp);
+        xp_copy[obj.id] = {
+            profile : obj.profile,
+            company : obj.company, 
+            location: obj.location,
+            start_time: obj.start_time,
+            end_time: obj.end_time,
+            is_current: obj.is_current
+        }
+
+        this.updateOnServer(obj.id,xp_copy[obj.id])
+            .then(()=>{
+                this.setState({xp:xp_copy});
+            })
+
+    }
+
+    onDelete(id){
+        var xp_copy = Object.assign({},this.state.xp);
+        delete xp_copy[id];
+        fetch(this.baseApiUrl+'jobprofiles/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
+            .then(resp => resp.json())
+            .then((data)=>{
+                this.setState({xp:xp_copy});
+                },(error) => {
+                    //TODO: Handle error here
+                }
+            );
+        
+    }
+
+    onAdd(){
+        var new_xp = {
+            profile : "Job profile",
+            company : null, 
+            location: null,
+            start_time: null,
+            end_time: null,
+            is_current: false
+        }
+        this.createOnServer(new_xp)
+            .then((data)=>{
+                let id = data['id'];
+                // Deleting the id, because we are passing an id prop to JobProfile component and a xp obj,
+                // if both has id attribute it will be a problem
+                delete data['id'];
+                var xp_copy = Object.assign({},this.state.xp);
+                xp_copy[id] = data;
+                this.setState({xp:xp_copy});
+            });
+        
+    }
+
+
+    async getAllFromApi(){
+        let resp = await fetch(this.baseApiUrl+'jobprofiles/',{ headers: this.authHeaders,method:"GET"});
+        let data = await resp.json();
+
+        let new_xp = {}
+        for(var i of data){
+            new_xp[i.id] = {
+                profile : i.profile,
+                company : i.company, 
+                location: i.location,
+                start_time: parseToDate(i.start_time),
+                end_time: parseToDate(i.end_time),
+                is_current: i.is_current
+            }
+        }
+        this.setState({xp:new_xp});
+    }
+
+    async createOnServer(obj){
+        // obj is a xp object
+        let resp = await fetch(this.baseApiUrl+'jobprofiles/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+
+    async updateOnServer(id,obj){
+        let resp = await fetch(this.baseApiUrl+'jobprofiles/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+
+    componentDidMount(){
+        // TODO: Catch shit here
+        this.getAllFromApi();
+    }
+
+    render(){        
         var main = (
             <div className="history-section">
                 <div className="container-fluid">
@@ -415,18 +570,275 @@ class ExperienceSection extends React.Component{
                             <div className="section-header">Experiences</div>
                         </div>
                         <div className="col-2 nopadding">
-                            <div onClick={this.addContact} className="add-button">
+                            <div onClick={this.onAdd} className="add-button">
                                 {add_icon}
                             </div>
                         </div>
                     </div>
-
-                    {/* Add  */}
+                    {
+                        Object.keys(this.state.xp).map((id,index)=>{
+                            return <JobProfile id={id} {...this.state.xp[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                        })
+                    }                    
                 </div>
             </div>
 
         );
         return main;
+    }
+}
+
+
+class Eductaion extends React.Component{
+    constructor(props){
+        super(props);
+        this.state = {
+            id : props.id,
+            degree: props.degree,
+            provider: props.provider,
+            start_time: props.start_time,
+            end_time: props.end_time,
+            is_current: props.is_current
+        }
+
+        this.dispRef = React.createRef();
+        this.formRef = React.createRef();
+        
+        this.onEdit = this.onEdit.bind(this);
+        this.onSave = this.onSave.bind(this);
+
+        this.prevState = null;
+
+        console.log(this.state);
+    }
+
+    componentDidMount(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+    }
+
+    onEdit(){
+        this.dispRef.current.style.display='None';
+        this.formRef.current.style.display='';
+        this.prevState = Object.assign({},this.state);        
+    }
+    onSave(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+
+        for(var key in this.prevState){
+            if(this.state[key] !== this.prevState[key]){
+                this.props.onChange(this.state)
+                this.prevState = null;
+                return;
+            }
+        }
+
+    }
+
+    render(){
+        var main = (
+            <div className="row" ref={this.dispRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>{this.state.degree}</span>
+                                <span onClick={this.onEdit}>{edit_icon}</span>
+                            </div>
+                            { this.state.provider && <span className="company-name">{this.state.provider}</span>}
+                            <div className="timeframe">
+                                { this.state.start_time && <span className="start-time">From: {getDisplayDate(this.state.start_time)}</span>}
+                                { this.state.end_time && <span className="end-time text-wrap">To: {getDisplayDate(this.state.end_time)}</span>}
+                            </div>
+                            <div className="is-present">
+                                {this.state.is_current===true && <span>Currently studing</span>}
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div className="col-2 nopadding">
+                    <div className="delete-button" onClick={()=>{this.props.onDelete(this.state.id)}}>
+                        {delete_icon}
+                    </div>
+                </div>
+            </div>
+        );
+
+        var form = (
+            <div className="row" ref={this.formRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>
+                                    <input placeholder="Course name" 
+                                            value={this.state.degree} 
+                                            onChange={(val)=>this.setState({degree:val.target.value})}/>
+                                </span> 
+                                <span onClick={this.onSave}>{done_icon}</span>
+                            </div>
+                            
+                            <input className="company-name" 
+                                    placeholder="Univerisy/College" 
+                                    value={this.state.provider} 
+                                    onChange={(val)=>this.setState({provider:val.target.value})} />
+                            
+                            <div className="timeframe">
+                                <div className="start-time">
+                                    Start time: <DatePicker selected={this.state.start_time} onChange={(date)=>{this.setState({start_time:date})}}/>
+                                </div>
+                                <div className="end-time">
+                                    End time: <DatePicker selected={this.state.end_time} onChange={(date)=>{this.setState({end_time:date})}}/>
+                                </div>
+                            </div>
+
+                            <div className="is-present">
+                                <label className="form-check-label" for="exampleCheck1">Studing here now?</label>
+                                <input type="checkbox" 
+                                        className="form-check-input" 
+                                        id="exampleCheck1" 
+                                        defaultChecked={this.state.is_current} 
+                                        onChange={(e)=>this.setState({is_current:e.target.checked})}/>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+        return <div key={this.state.id}>{main}{form}</div>;
+    }
+
+}
+
+class EductaionSection extends React.Component{
+    constructor(props){
+        super(props);
+        this.state = {
+            edu : {}
+        }
+
+        this.onUpdate = this.onUpdate.bind(this);
+        this.onDelete = this.onDelete.bind(this);
+        this.onAdd = this.onAdd.bind(this);
+
+        this.baseApiUrl = 'http://localhost:8000/coreapi/';
+        this.authHeaders = { 
+            'Content-Type':'application/json',
+            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
+        };
+
+    }
+
+    onUpdate(obj){
+        var edu_copy = Object.assign(this.state.edu);
+        let id = obj['id'];
+        
+        let obj_copy = Object.assign({},obj);
+        delete obj_copy['id'];
+        edu_copy[id] = obj_copy;
+
+
+        this.updateOnServer(id,obj_copy)
+            .then(()=>{
+                this.setState({edu:edu_copy});
+            });
+    }
+
+    onDelete(id){
+        var edu_copy = Object.assign({},this.state.edu);
+        delete edu_copy[id];
+        fetch(this.baseApiUrl+'edus/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
+            .then(resp => resp.json())
+            .then((data)=>{
+                this.setState({edu:edu_copy});
+                },(error) => {
+                    //TODO: Handle error here
+                }
+            );
+    }
+
+    onAdd(){
+        var new_edu = {
+            degree: 'Name of degree',
+            provider: null,
+            start_time: null,
+            end_time: null,
+            is_current: false
+        }
+        this.createOnServer(new_edu)
+            .then((data)=>{
+                var new_id = data['id'];
+                delete data['id'];
+                var edu_copy = Object.assign({},this.state.edu);
+                edu_copy[new_id] = data;
+                this.setState({edu:edu_copy});
+            });
+    }
+    
+    async getAllFromApi(){
+        let resp = await fetch(this.baseApiUrl+'edus/',{ headers: this.authHeaders,method:"GET"});
+        let data = await resp.json();        
+
+        let new_edu = {};
+        for(var i of data){
+            let new_id = i['id'];
+            delete i['id']; 
+            i['start_time'] = parseToDate(i['start_time']);
+            i['end_time'] = parseToDate(i['end_time']);
+
+            new_edu[new_id] = i;
+        }
+        console.log(new_edu);
+
+        this.setState({edu:new_edu});
+        
+    }
+
+    async createOnServer(obj){
+        // obj is a edu object
+        let resp = await fetch(this.baseApiUrl+'edus/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+
+    async updateOnServer(id,obj){
+        let resp = await fetch(this.baseApiUrl+'edus/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+
+    componentDidMount(){
+        this.getAllFromApi().then(()=>console.log(this.state));
+    }
+
+    render(){
+        var main = (
+            <div className="history-section">
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-10 nopadding">
+                            <div className="section-header">Education</div>
+                        </div>
+                        <div className="col-2 nopadding">
+                            <div onClick={this.onAdd} className="add-button">
+                                {add_icon}
+                            </div>
+                        </div>
+                    </div>
+                    {
+                        Object.keys(this.state.edu).map((id,index)=>{
+                            return <Eductaion id={id} {...this.state.edu[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                        })
+                    } 
+                </div>
+            </div>
+
+        );
+        return main;
+
     }
 }
 
@@ -454,7 +866,7 @@ export default class HistoryPage extends React.Component {
                         <ExperienceSection/>
                     </div>
                     <div className="col-lg-3 col-md-6">
-                        <h1>Education</h1>
+                        <EductaionSection/>
                     </div>
                 </div>
             </div>
