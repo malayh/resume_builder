@@ -2,6 +2,7 @@ import React from 'react';
 import DatePicker from 'react-datepicker';
 
 import 'react-datepicker/dist/react-datepicker.css';
+import './historypage.css';
 
 export let delete_icon = (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="black" class="bi bi-trash-fill" viewBox="0 0 16 16">
@@ -27,6 +28,17 @@ export let done_icon = (
     </svg>
 );
 
+export let downarrow =(
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+    </svg>
+);
+
+export let uparrow = (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-up" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
+    </svg>
+);
 
 export class EditableDiv extends React.Component{
     constructor({content,onUpdate,className,...rest}){
@@ -90,6 +102,53 @@ export class EditableDiv extends React.Component{
     }
 }
 
+export class CollasableDisplay extends React.Component{
+    constructor(props){
+        super(props);
+
+        this.state = {
+            name : props.name,
+            is_expanded : false
+        }
+        this.handleToggle = this.handleToggle.bind(this);
+        this.contentRef = React.createRef();
+    }
+
+    componentDidMount(){
+        this.contentRef.current.style.display = "None";
+
+    }
+    handleToggle(){
+        this.setState({is_expanded: !this.state.is_expanded},()=>{
+            var disp = this.state.is_expanded ? '' : 'None';
+            this.contentRef.current.style.display = disp;
+        });
+    }
+
+    render(){
+        var main = (
+            <div className="collapsable">
+                <div className="heading">
+                    <span>{this.state.name}</span>
+                    <span className="close-button" onClick={this.handleToggle}>
+                        {this.state.is_expanded ? <span>{downarrow}</span> : <span>{uparrow}</span>}
+                    </span>
+
+                </div>
+
+            </div>
+        );
+        return (
+            <>
+            {main}
+            <div ref={this.contentRef}>
+                {this.props.children}
+            </div>
+            </>
+        );
+    }
+}
+
 export function getDisplayDate(date){
     // date is a Date object
     // return string that looks like 'Jan 2019'
@@ -106,5 +165,31 @@ export function parseToDate(str){
 
     var parts = str.split('-');
     return new Date(parts[0], parts[1] - 1, parts[2]);
+
+}
+
+export function splitTextToPara(str){
+    // 1 new line = <br>, 2 new line = new para
+
+    var list = str.split("\n\n");
+    list = list.map((val)=>val.split("\n"));
+
+    return (
+        <span>
+        {
+            list.map(para=>{
+                return (
+                    <p>
+                    {
+                        para.map(line=>{
+                            return <span>{line}<br/></span>
+                        })
+                    }
+                    </p>
+                )
+            })
+        }
+        </span>
+    )
 
 }

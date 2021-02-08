@@ -111,3 +111,47 @@
     border-left: None;
     border-bottom: 1px dashed black; 
 }
+
+.job-profile textarea{
+    resize: both;
+    overflow: auto;
+    width: 120%;
+    height: 200pt;
+}
+
+.job-profile .textarea-label{
+    display: block;
+    margin-top: 1em;
+}
+
+.job-profile .keywords{
+    display: flex;
+    padding: 1em;
+    padding-left: 0;
+}
+.keywords .keyword-item{
+    display: inline-block;
+    padding: 0.5em;
+    margin: 0.3em;
+    border: 1px solid rgb(136, 136, 136);
+    border-radius: 8pt;
+    font-style: italic;
+}
+
+/* -------- Collapable ------ */
+.collapsable {
+    padding: 0.5em;
+    /* background-color: green; */
+    border-bottom: 1px solid rgb(116, 116, 116);
+}
+.collapsable .heading{
+    font-size: 14pt;
+    font-weight: bold;
+}
+.collapsable .heading .close-button{
+    margin: 1em;
+    padding: 0.3em;
+    cursor: pointer;
+    background-color: rgb(223, 223, 223);
+    border-radius: 20%; 
+}

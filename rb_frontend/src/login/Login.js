@@ -5,6 +5,7 @@ import {storageAvailable , isValidEmail} from '../util'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './login.css';
 import '../main.css';
+import {configs} from '../Config'
 
 export default class LoginPage extends React.Component {
     
@@ -18,7 +19,7 @@ export default class LoginPage extends React.Component {
         this.state = {
             formError:""
         }
-        this.baseApiUrl = "http://localhost:8000/";
+        this.baseApiUrl = configs.apiHostUrl;
     }
 
     toggleSignup() {

@@ -7,9 +7,11 @@ import './historypage.css';
 
 import {
     delete_icon,add_icon,edit_icon,done_icon,
-    EditableDiv,
-    getDisplayDate, parseToDate
+    EditableDiv,CollasableDisplay,
+    getDisplayDate, parseToDate, splitTextToPara
 } from './components';
+
+import {configs} from '../Config';
 
 
 
@@ -31,7 +33,7 @@ class SkillSection extends React.Component{
         this.addSkill = this.addSkill.bind(this);
         this.loadAPIData = this.loadAPIData.bind(this);
 
-        this.baseApiUrl = 'http://localhost:8000/coreapi/';
+        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
         this.authHeaders = { 
             'Content-Type':'application/json',
             'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
@@ -195,7 +197,7 @@ class ContactSection extends React.Component{
             contacts : {}
         }
 
-        this.baseApiUrl = 'http://localhost:8000/coreapi/';
+        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
         this.authHeaders = { 
             'Content-Type':'application/json',
             'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
@@ -248,7 +250,6 @@ class ContactSection extends React.Component{
             );
     }
     getContactRow(id){
-        // console.log(this.state.contacts[id]);
         var row = (
             <div className="row" key={id}>
                 <div className="col-10 nopadding text-wrap">
@@ -451,7 +452,6 @@ class JobProfile extends React.Component{
     }
 }
 
-
 class ExperienceSection extends React.Component{
     constructor(props){
         super(props);
@@ -463,7 +463,7 @@ class ExperienceSection extends React.Component{
         this.onDelete = this.onDelete.bind(this);
         this.onAdd = this.onAdd.bind(this);
         
-        this.baseApiUrl = 'http://localhost:8000/coreapi/';
+        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
         this.authHeaders = { 
             'Content-Type':'application/json',
             'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
@@ -514,11 +514,12 @@ class ExperienceSection extends React.Component{
         this.createOnServer(new_xp)
             .then((data)=>{
                 let id = data['id'];
+                var _d = Object.assign({},data);
                 // Deleting the id, because we are passing an id prop to JobProfile component and a xp obj,
                 // if both has id attribute it will be a problem
-                delete data['id'];
+                delete _d['id'];
                 var xp_copy = Object.assign({},this.state.xp);
-                xp_copy[id] = data;
+                xp_copy[id] = _d;
                 this.setState({xp:xp_copy});
             });
         
@@ -561,7 +562,7 @@ class ExperienceSection extends React.Component{
         this.getAllFromApi();
     }
 
-    render(){        
+    render(){       
         var main = (
             <div className="history-section">
                 <div className="container-fluid">
@@ -577,7 +578,7 @@ class ExperienceSection extends React.Component{
                     </div>
                     {
                         Object.keys(this.state.xp).map((id,index)=>{
-                            return <JobProfile id={id} {...this.state.xp[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                            return <JobProfile key={id} id={id} {...this.state.xp[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
                         })
                     }                    
                 </div>
@@ -609,7 +610,6 @@ class Eductaion extends React.Component{
 
         this.prevState = null;
 
-        console.log(this.state);
     }
 
     componentDidMount(){
@@ -724,12 +724,11 @@ class EductaionSection extends React.Component{
         this.onDelete = this.onDelete.bind(this);
         this.onAdd = this.onAdd.bind(this);
 
-        this.baseApiUrl = 'http://localhost:8000/coreapi/';
+        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
         this.authHeaders = { 
             'Content-Type':'application/json',
             'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
         };
-
     }
 
     onUpdate(obj){
@@ -745,6 +744,7 @@ class EductaionSection extends React.Component{
             .then(()=>{
                 this.setState({edu:edu_copy});
             });
+
     }
 
     onDelete(id){
@@ -791,7 +791,6 @@ class EductaionSection extends React.Component{
 
             new_edu[new_id] = i;
         }
-        console.log(new_edu);
 
         this.setState({edu:new_edu});
         
@@ -811,7 +810,7 @@ class EductaionSection extends React.Component{
     }
 
     componentDidMount(){
-        this.getAllFromApi().then(()=>console.log(this.state));
+        this.getAllFromApi();
     }
 
     render(){
@@ -830,7 +829,7 @@ class EductaionSection extends React.Component{
                     </div>
                     {
                         Object.keys(this.state.edu).map((id,index)=>{
-                            return <Eductaion id={id} {...this.state.edu[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                            return <Eductaion key={id} id={id} {...this.state.edu[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
                         })
                     } 
                 </div>
@@ -842,6 +841,413 @@ class EductaionSection extends React.Component{
     }
 }
 
+class ProfileSummary extends React.Component{
+    constructor(props){
+        super(props);
+
+        this.state = {
+            id: props.id,
+            name: props.name,
+            summary: props.summary
+        }
+
+        this.dispRef = React.createRef();
+        this.formRef = React.createRef();
+        
+        this.onEdit = this.onEdit.bind(this);
+        this.onSave = this.onSave.bind(this);
+
+        this.prevState = null;
+
+    }
+
+    componentDidMount(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+    }
+
+    onEdit(){
+        this.dispRef.current.style.display='None';
+        this.formRef.current.style.display='';
+        this.prevState = Object.assign({},this.state);        
+    }
+    onSave(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+
+        for(var key in this.prevState){
+            if(this.state[key] !== this.prevState[key]){
+                this.props.onChange(this.state)
+                this.prevState = null;
+                return;
+            }
+        }
+
+    }
+
+    render(){
+        var main = (
+            <div className="row" ref={this.dispRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>{this.state.name}</span>
+                                <span onClick={this.onEdit}>{edit_icon}</span>
+                            </div>
+                            { this.state.summary && <span className="company-name">{splitTextToPara(this.state.summary)}</span>}
+                            
+                        </div>
+                    </div>
+                </div>
+                <div className="col-2 nopadding">
+                    <div className="delete-button" onClick={()=>{this.props.onDelete(this.state.id)}}>
+                        {delete_icon}
+                    </div>
+                </div>
+            </div>
+        );
+
+        var form = (
+            <div className="row" ref={this.formRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>
+                                    <input placeholder="Summary name" 
+                                            value={this.state.name} 
+                                            onChange={(val)=>this.setState({name:val.target.value})}/>
+                                </span> 
+                                <span onClick={this.onSave}>{done_icon}</span>
+                            </div>
+                            
+                            <span className="textarea-label">Sumarry:</span>
+                            <textarea className="company-name" 
+                                    placeholder="summary" 
+                                    value={this.state.summary} 
+                                    onChange={(val)=>this.setState({summary:val.target.value})} />
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+        return <div key={this.state.id}>{main}{form}</div>;
+    }   
+}
+
+class ProfileSummarySection extends React.Component{
+    constructor(props){
+        super(props);
+
+        this.state = {
+            profSum : {}
+        }
+
+        this.onAdd = this.onAdd.bind(this);
+        this.onUpdate = this.onUpdate.bind(this);
+        this.onDelete = this.onDelete.bind(this);
+
+        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
+        this.authHeaders = { 
+            'Content-Type':'application/json',
+            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
+        };
+    }
+    onAdd(){
+        var new_ps = {name:"Profile Summary",summary:"Edit this summary"};
+        this.createOnServer(new_ps)
+            .then((data)=>{
+                let id = data['id'];
+                delete data['id'];
+                var _ps = Object.assign({},this.state.profSum);
+                _ps[id] = data;
+                this.setState({profSum:_ps});
+            });
+
+    }
+    onUpdate(obj){
+        var _ps = Object.assign({},this.state.profSum);
+        var id = obj['id'];
+        var _obj = Object.assign({},obj);
+        delete _obj['id'];
+        _ps[id] = _obj;
+
+        this.updateOnServer(id,_obj)
+            .then(()=>{
+                this.setState({profSum:_ps});
+            });
+
+    }
+    onDelete(id){
+        var _ps = Object.assign({},this.state.profSum);
+        delete _ps[id];
+        fetch(this.baseApiUrl+'summaries/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
+            .then(resp => resp.json())
+            .then((data)=>{
+                this.setState({profSum:_ps});
+                },(error) => {
+                    //TODO: Handle error here
+                }
+            );
+    }
+
+    async getAllFromApi(){
+        let resp = await fetch(this.baseApiUrl+'summaries/',{ headers: this.authHeaders,method:"GET"});
+        let data = await resp.json();
+
+        var new_ps = {}
+        for(var i of data){
+            var id = i['id'];
+            delete i['id'];
+            new_ps[id] = i;
+        }
+
+        this.setState({profSum:new_ps});
+    }
+
+    async updateOnServer(id,obj){
+        let resp = await fetch(this.baseApiUrl+'summaries/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+    
+    async createOnServer(obj){
+        // obj is a edu object
+        let resp = await fetch(this.baseApiUrl+'summaries/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+
+    componentDidMount(){
+        this.getAllFromApi();
+    }
+    render(){
+        var main = (
+            <div className="history-section">
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-10 nopadding">
+                            <div className="section-header">Profile Summaries</div>
+                        </div>
+                        <div className="col-2 nopadding">
+                            <div onClick={this.onAdd} className="add-button">
+                                {add_icon}
+                            </div>
+                        </div>
+                    </div>
+                    {
+                        Object.keys(this.state.profSum).map((id,index)=>{
+                            return <ProfileSummary key={id} id={id} {...this.state.profSum[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                        })
+                    }
+                </div>
+            </div>
+
+        );
+        return main;
+    }
+}
+
+class Project extends React.Component{
+    constructor(props){
+        super(props);
+        this.state ={
+            id : props.id,
+            title: props.title,
+            story: props.story,
+            keywords : props.keywords
+        }
+
+        this.dispRef = React.createRef();
+        this.formRef = React.createRef();
+        
+        this.onEdit = this.onEdit.bind(this);
+        this.onSave = this.onSave.bind(this);
+
+        this.prevState = null;
+    }
+
+    componentDidMount(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+    }
+
+    onEdit(){
+        this.dispRef.current.style.display='None';
+        this.formRef.current.style.display='';
+        this.prevState = Object.assign({},this.state);        
+    }
+
+    onSave(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+
+        for(var key in this.prevState){
+            if(this.state[key] !== this.prevState[key]){
+                this.props.onChange(this.state)
+                this.prevState = null;
+                return;
+            }
+        }
+
+    }
+    
+    getDispKeyword(str){
+        var keywords = str.split(",");
+        return (
+            <span>
+                {keywords.map(val=>{
+                    return <span className="keyword-item">{val}</span>
+                })}
+            </span>
+        );
+    }
+    render(){
+        var main = (
+            <div className="row" ref={this.dispRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>{this.state.title}</span>
+                                <span onClick={this.onEdit}>{edit_icon}</span>
+                            </div>
+                            <div className="keywords">
+                                {   this.state.keywords && <span>{this.getDispKeyword(this.state.keywords)}</span> }
+                            </div>
+
+                            <CollasableDisplay name="Story">
+                                { this.state.story && <span className="company-name">{splitTextToPara(this.state.story)}</span>}
+                            </CollasableDisplay>                       
+                                    
+                        </div>
+                    </div>
+                </div>
+                <div className="col-2 nopadding">
+                    <div className="delete-button" onClick={()=>{this.props.onDelete(this.state.id)}}>
+                        {delete_icon}
+                    </div>
+                </div>
+            </div>
+        );
+
+        var form = (
+            <div className="row" ref={this.formRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>
+                                    <input placeholder="Project Title" 
+                                            value={this.state.title} 
+                                            onChange={(val)=>this.setState({title:val.target.value})}/>
+                                </span> 
+                                <span onClick={this.onSave}>{done_icon}</span>
+                            </div>
+
+                            <span className="textarea-label">Keywords</span>
+                                <textarea className="company-name" 
+                                        placeholder="Specific keyword for the project" 
+                                        value={this.state.keywords} 
+                                        onChange={(val)=>this.setState({keywords:val.target.value})}
+                                        style={{height:'50pt'}}
+                                        />
+                            
+                            <span className="textarea-label">Story</span>
+                            <textarea className="company-name" 
+                                    placeholder="Write the story of the project." 
+                                    value={this.state.story} 
+                                    onChange={(val)=>this.setState({story:val.target.value})} />
+
+                            
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+        return <div key={this.state.id}>{main}{form}</div>;
+    }
+}
+
+class ProjectSection extends React.Component{
+    constructor(props){
+        super(props);
+
+        this.state ={
+            projects:{}
+        }
+        this.onAdd = this.onAdd.bind(this);
+        this.onUpdate = this.onUpdate.bind(this);
+        this.onDelete = this.onDelete.bind(this);
+
+        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
+        this.authHeaders = { 
+            'Content-Type':'application/json',
+            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
+        };
+    }
+
+    
+
+    onAdd(){
+        
+
+    }
+    onUpdate(obj){
+       
+
+    }
+    onDelete(id){
+        
+    }
+
+    async getAllFromApi(){
+        let resp = await fetch(this.baseApiUrl+'projects/',{ headers: this.authHeaders,method:"GET"});
+        let data = await resp.json();
+
+        var projects = {}
+        for(var i of data){
+            var id = i['id'];
+            delete i['id'];
+            projects[id] = i;
+        }
+
+        this.setState({projects:projects});
+    }
+
+    componentDidMount(){
+        this.getAllFromApi();
+    }
+    render(){
+        var main = (
+            <div className="history-section">
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-10 nopadding">
+                            <div className="section-header">Projects</div>
+                        </div>
+                        <div className="col-2 nopadding">
+                            <div onClick={this.onAdd} className="add-button">
+                                {add_icon}
+                            </div>
+                        </div>
+                    </div>
+                    {
+                        Object.keys(this.state.projects).map((id,index)=>{
+                            return <Project key={id} id={id} {...this.state.projects[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                        })
+                    }
+                </div>
+            </div>
+
+        );
+        return main;
+    }
+}
 
 export default class HistoryPage extends React.Component {
     constructor(props){
@@ -864,6 +1270,8 @@ export default class HistoryPage extends React.Component {
                     </div>
                     <div className="col-lg-6 col-md-6">
                         <ExperienceSection/>
+                        <ProjectSection/>
+                        <ProfileSummarySection/>
                     </div>
                     <div className="col-lg-3 col-md-6">
                         <EductaionSection/>
