@@ -104,6 +104,7 @@ export class EditableDiv extends React.Component{
 
 export class CollasableDisplay extends React.Component{
     constructor(props){
+        //@props: optional props: onClickAdd
         super(props);
 
         this.state = {
@@ -127,16 +128,26 @@ export class CollasableDisplay extends React.Component{
 
     render(){
         var main = (
+
             <div className="collapsable">
-                <div className="heading">
-                    <span>{this.state.name}</span>
-                    <span className="close-button" onClick={this.handleToggle}>
-                        {this.state.is_expanded ? <span>{downarrow}</span> : <span>{uparrow}</span>}
-                    </span>
+                <div className="row">
+                    <div className="col col-sm-6">
+                        <div className="heading">
+                            <span>{this.state.name}</span>
+                        </div>
+                    </div>
+                    <div className="col col-sm-3">
+                        <span className="close-button" onClick={this.handleToggle}>
+                            {this.state.is_expanded ? <span>{downarrow}</span> : <span>{uparrow}</span>}
+                        </span>
 
+                    </div>
+                    <div className="col col-sm-3">
+                        { this.props.onClickAdd && <span onClick={this.props.onClickAdd} className="add-button" style={{border:'None'}}>{add_icon}</span>}
+                    </div>
                 </div>
-
             </div>
+
         );
         return (
             <>

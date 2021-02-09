@@ -1051,30 +1051,32 @@ class ProfileSummarySection extends React.Component{
     }
 }
 
-class Project extends React.Component{
+
+
+
+class ProjectSummary extends React.Component{
     constructor(props){
         super(props);
-        this.state ={
+        this.state = {
             id : props.id,
-            title: props.title,
-            story: props.story,
-            keywords : props.keywords
+            project_fk: props.project_fk,
+            summary: props.summary
         }
-
+        
         this.dispRef = React.createRef();
         this.formRef = React.createRef();
-        
+
         this.onEdit = this.onEdit.bind(this);
         this.onSave = this.onSave.bind(this);
 
         this.prevState = null;
+
     }
 
     componentDidMount(){
         this.formRef.current.style.display='None'; 
         this.dispRef.current.style.display='';
     }
-
     onEdit(){
         this.dispRef.current.style.display='None';
         this.formRef.current.style.display='';
@@ -1087,7 +1089,122 @@ class Project extends React.Component{
 
         for(var key in this.prevState){
             if(this.state[key] !== this.prevState[key]){
-                this.props.onChange(this.state)
+                this.props.onChange({
+                    id      : this.state.id,
+                    project_fk: this.state.project_fk,
+                    summary: this.state.summary
+                });
+                this.prevState = null;
+                return;
+            }
+        }
+
+    }
+
+    render(){
+        var main = (
+            <div className="row" ref={this.dispRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <span className="summary-text" onClick={this.onEdit}>{this.state.summary}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-2 nopadding">
+                    <div className="summary-buttons">
+                        <span className="delete-button" onClick={()=>this.props.onDelete(this.state.id)}>{delete_icon}</span>
+                    </div>
+                </div>
+            </div>
+        );
+
+        var form = (
+            <div className="row" ref={this.formRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <textarea className="company-name" 
+                                placeholder="Specific keyword for the project" 
+                                value={this.state.summary} 
+                                onChange={(val)=>this.setState({summary:val.target.value})}
+                                style={{height:'100pt', width:'100%', resize:'vertical'}}
+                                />
+                        </div>
+                    </div>
+                </div>
+                <div className="col-2 nopadding">
+                    <div className="summary-buttons">
+                        <span onClick={this.onSave}>{done_icon}</span>
+                    </div>
+                </div>
+            </div>
+        );
+        return <div>{main}{form}</div>;
+    }
+}
+
+class Project extends React.Component{
+    // Project acts as 'section' for Project Summaries    
+    constructor(props){
+        super(props);
+        this.state = {
+            id : props.id,
+            title: props.title,
+            story: props.story,
+            keywords : props.keywords,
+
+            summaries : {}
+        }
+
+        this.dispRef = React.createRef();
+        this.formRef = React.createRef();
+        
+        this.onEdit = this.onEdit.bind(this);
+        this.onSave = this.onSave.bind(this);
+
+        this.onSummaryUpdate = this.onSummaryUpdate.bind(this);
+        this.onSummaryAdd = this.onSummaryAdd.bind(this);
+        this.onSummaryDelete = this.onSummaryDelete.bind(this);
+
+        this.prevState = null;
+
+        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
+        this.authHeaders = { 
+            'Content-Type':'application/json',
+            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
+        };
+    }
+
+    componentDidMount(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+        this.loadSummaries();
+    }
+
+    onEdit(){
+        this.dispRef.current.style.display='None';
+        this.formRef.current.style.display='';
+        this.prevState = {
+            id      : this.state.id,
+            title   : this.state.title,
+            story   : this.state.story,
+            keywords: this.state.keywords
+        };       
+    }
+
+    onSave(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+
+        for(var key in this.prevState){
+            if(this.state[key] !== this.prevState[key]){
+                this.props.onChange({
+                    id      : this.state.id,
+                    title   : this.state.title,
+                    story   : this.state.story,
+                    keywords: this.state.keywords
+                });
                 this.prevState = null;
                 return;
             }
@@ -1095,6 +1212,7 @@ class Project extends React.Component{
 
     }
     
+
     getDispKeyword(str){
         var keywords = str.split(",");
         return (
@@ -1105,6 +1223,74 @@ class Project extends React.Component{
             </span>
         );
     }
+
+
+    // All Summaries related stuff 
+    async loadSummaries(){
+        let resp = await fetch(this.baseApiUrl+'projects/'+this.state.id+'/summaries/',{ headers: this.authHeaders,method:"GET"});
+        let data = await resp.json();
+
+        var summaries = {}
+        for(var i of data){
+            var id = i['id'];
+            delete i['id'];
+            summaries[id] = i;
+        }
+
+        this.setState({summaries:summaries});
+    }
+
+    async updateSummaryOnServer(id,obj){
+        let resp = await fetch(this.baseApiUrl+'projects/summaries/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+
+    async createSummaryOnServer(obj){
+        let resp = await fetch(this.baseApiUrl+'projects/'+this.state.id+'/summaries/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
+    }
+
+    onSummaryUpdate(obj){
+        var _summaries = Object.assign({},this.state.summaries);
+        var id = obj['id'];
+        var _obj = Object.assign({},obj);
+        delete _obj['id'];
+        _summaries[id] = _obj;
+
+        this.updateSummaryOnServer(id,_obj)
+            .then(()=>{
+                this.setState({summaries:_summaries});
+            });
+    }
+
+    onSummaryAdd(){
+        var new_project = {project_fk:this.state.id, summary:"Tap me to edit this summary"};
+
+        this.createSummaryOnServer(new_project)
+            .then((data)=>{
+                let id = data['id'];
+                delete data['id'];
+                var _s = Object.assign({},this.state.summaries);
+                _s[id] = data;
+                this.setState({summaries:_s});
+            });
+    }
+
+    onSummaryDelete(id){
+        var _s = Object.assign({},this.state.summaries);
+        delete _s[id];
+        fetch(this.baseApiUrl+'projects/summaries/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
+            .then(resp => resp.json())
+            .then((data)=>{
+                this.setState({summaries:_s});
+                },(error) => {
+                    //TODO: Handle error here
+                }
+            );
+    }
+
     render(){
         var main = (
             <div className="row" ref={this.dispRef}>
@@ -1121,6 +1307,16 @@ class Project extends React.Component{
 
                             <CollasableDisplay name="Story">
                                 { this.state.story && <span className="company-name">{splitTextToPara(this.state.story)}</span>}
+                            </CollasableDisplay>
+                            
+                            <br/>
+
+                            <CollasableDisplay name="Summaries" onClickAdd={this.onSummaryAdd}>
+                            {
+                                Object.keys(this.state.summaries).map((id,index)=>{
+                                    return <ProjectSummary key={id} id={id} {...this.state.summaries[id]} onChange={this.onSummaryUpdate} onDelete={this.onSummaryDelete}/>
+                                })
+                            }
                             </CollasableDisplay>                       
                                     
                         </div>
@@ -1191,18 +1387,47 @@ class ProjectSection extends React.Component{
         };
     }
 
-    
-
     onAdd(){
-        
+        var new_project = {title:"Project Title",story:"Add the story here",keywords:"coma,separated,keywords"};
 
+        this.createOnServer(new_project)
+            .then((data)=>{
+                let id = data['id'];
+                delete data['id'];
+                var _prj = Object.assign({},this.state.projects);
+                _prj[id] = data;
+                this.setState({projects:_prj});
+            });
     }
     onUpdate(obj){
-       
+        var _projects = Object.assign({},this.state.projects);
+        var id = obj['id'];
+        var _obj = Object.assign({},obj);
+        delete _obj['id'];
+        _projects[id] = _obj;
 
+        this.updateOnServer(id,_obj)
+            .then(()=>{
+                this.setState({projects:_projects});
+            });
     }
     onDelete(id){
-        
+        var _p = Object.assign({},this.state.projects);
+        delete _p[id];
+        fetch(this.baseApiUrl+'projects/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
+            .then(resp => resp.json())
+            .then((data)=>{
+                this.setState({projects:_p});
+                },(error) => {
+                    //TODO: Handle error here
+                }
+            );
+    }
+
+    async updateOnServer(id,obj){
+        let resp = await fetch(this.baseApiUrl+'projects/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
     }
 
     async getAllFromApi(){
@@ -1217,6 +1442,13 @@ class ProjectSection extends React.Component{
         }
 
         this.setState({projects:projects});
+    }
+
+    async createOnServer(obj){
+        // obj is a edu object
+        let resp = await fetch(this.baseApiUrl+'projects/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
+        let data = await resp.json();
+        return data;
     }
 
     componentDidMount(){
