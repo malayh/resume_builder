@@ -23,14 +23,12 @@ class Signup(APIView):
     def post(self,request,format=None):
         serializer = RB_User_Serializer(data=request.data)
 
-        if not serializer.is_valid():
-            return Response(status=status.HTTP_400_BAD_REQUEST,data={"msg":"Bad request"})
+        serializer.is_valid(raise_exception=True)
 
         try:
             user = serializer.save()
         except ValidationError as e:
             return Response(status=status.HTTP_406_NOT_ACCEPTABLE,data={"msg":"".join(e)})
-
 
         try:
             user.save()

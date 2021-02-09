@@ -175,13 +175,46 @@ class ProjectDetail(GenericDetail):
     SERIALIZER_CLASS = Projects_Serializer
 
 
-class ProjectSummaryList(GenericList):
-    MODEL_CLASS = Projects_Summaries
-    SERIALIZER_CLASS = Projects_Summaries_Serializer
+class ProjectSummaryList(APIView):
+    def get_object_by_id(self,id:int,user,*,model_class):
+        try:
+            obj = model_class.objects.get(id=id)
+        except model_class.DoesNotExist:
+            return None,status.HTTP_404_NOT_FOUND 
+        if obj.user_fk != user:
+            return None,status.HTTP_403_FORBIDDEN
 
+        return obj, status.HTTP_200_OK
+
+    def get(self,request,project_id:int):
+        _project, _status = self.get_object_by_id(project_id,request.user,model_class=Projects)
+        if not _project:
+            return Response(status=_status)
+
+        objs = Projects_Summaries.objects.filter(project_fk=_project).all()
+        return Response(Projects_Summaries_Serializer(objs,many=True).data)
+
+    def post(self,request,project_id:int):
+        _project, _status = self.get_object_by_id(project_id,request.user,model_class=Projects)
+        if not _project:
+            return Response(status=_status)
+
+        _s = Projects_Summaries_Serializer(data=request.data)
+        _s.is_valid(raise_exception=True)
+
+        assert isinstance(Projects_Summaries_Serializer.Meta.fks,list)
+        for fk in Projects_Summaries_Serializer.Meta.fks:
+            if fk in _s.validated_data and _s.validated_data[fk].user_fk != request.user:
+                return Response(status=status.HTTP_403_FORBIDDEN)
+
+        obj = _s.save(project_fk=_project,user_fk=request.user)
+        return Response(Projects_Summaries_Serializer(obj).data)
+
+        
 class ProjectSummaryDetail(GenericDetail):
     MODEL_CLASS = Projects_Summaries
     SERIALIZER_CLASS = Projects_Summaries_Serializer
+
 
 
 class ResumeList(GenericList):

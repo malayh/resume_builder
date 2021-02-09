@@ -20,7 +20,7 @@ urlpatterns = [
     path('coreapi/projects/',ProjectList.as_view()),
     path('coreapi/projects/<int:pk>/',ProjectDetail.as_view()),
 
-    path('coreapi/projects/summaries/',ProjectSummaryList.as_view()),
+    path('coreapi/projects/<int:project_id>/summaries/',ProjectSummaryList.as_view()),
     path('coreapi/projects/summaries/<int:pk>/',ProjectSummaryDetail.as_view()),
 
     path('coreapi/resumes/',ResumeList.as_view()),
