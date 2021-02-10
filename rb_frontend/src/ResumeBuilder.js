@@ -158,7 +158,8 @@ export default class ResumeBuilder extends React.Component {
                                     <Redirect to={{ pathname : this.loginPath, state : { referrer :this.resumesPath } }}/> 
                             }
                             </Route>
-                            <Redirect exact from={this.basePath} to={this.historyPath} />
+                            {/* Change the following route back to history page */}
+                            <Redirect exact from={this.basePath} to={this.resumesPath} /> 
                         </Switch>
                     </div>
                 </div>

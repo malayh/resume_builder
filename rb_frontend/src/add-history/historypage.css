@@ -1,40 +1,9 @@
-.history-section{
-    border: 1px solid #163117;
-    border-radius: 0.6em;
-
-    /* background-color:  #8cca8e; */
-    /* background-color:  #dbdbdb; */
-
-    margin: 1em;
-}
-.section-header{
-    display: flex;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0.5em;
-    /* color: white; */
-    /* background-color: #163117 ; */
-    font-size: 14pt;
-
-    font-weight: bold;
-    border-bottom: 1px solid black ;
-}
 .section-content{
     width: 100%;
     padding: 0.5em;
     font-size: 10pt;
 }
 
-.history-section .add-button{
-    /* background-color: #163117; */
-    margin: 0;
-    padding: 1em;
-    cursor: pointer;
-    border-bottom: 1px solid #163117;
-    /* border-radius: 25%; */
-
-}
 .section-content input{
     outline: none;
     border: none;
@@ -56,7 +25,7 @@
 
 }
 
-.history-section .delete-button{
+.delete-button{
     /* background-color: #8cca8e; */
     padding: 1em;
     cursor: pointer;

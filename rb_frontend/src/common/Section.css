@@ -1,0 +1,27 @@
+.section-body{
+    border: 1px solid #163117;
+    border-radius: 0.6em;
+    margin: 1em;
+}
+.section-body-header{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0.5em;
+
+    font-size: 14pt;
+
+    font-weight: bold;
+    border-bottom: 1px solid black ;
+}
+
+.section-body .add-button{
+    /* background-color: #163117; */
+    margin: 0;
+    padding: 1em;
+    cursor: pointer;
+    border-bottom: 1px solid #163117;
+    /* border-radius: 25%; */
+
+}

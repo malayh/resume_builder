@@ -105,19 +105,23 @@ export class EditableDiv extends React.Component{
 export class CollasableDisplay extends React.Component{
     constructor(props){
         //@props: optional props: onClickAdd
+        //@props: optional: expendedDefault
         super(props);
 
         this.state = {
             name : props.name,
-            is_expanded : false
+            is_expanded : this.props.expendedDefault ? true : false
         }
         this.handleToggle = this.handleToggle.bind(this);
         this.contentRef = React.createRef();
     }
 
     componentDidMount(){
-        this.contentRef.current.style.display = "None";
-
+        if(this.state.is_expanded)
+            this.contentRef.current.style.display = "";
+        else
+            this.contentRef.current.style.display = "None";
+        
     }
     handleToggle(){
         this.setState({is_expanded: !this.state.is_expanded},()=>{

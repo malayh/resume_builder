@@ -6,10 +6,12 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './historypage.css';
 
 import {
-    delete_icon,add_icon,edit_icon,done_icon,
     EditableDiv,CollasableDisplay,
     getDisplayDate, parseToDate, splitTextToPara
 } from './components';
+
+import {SectionBody} from '../common/Section';
+import {delete_icon,add_icon,edit_icon,done_icon} from '../common/Icons';
 
 import {configs} from '../Config';
 
@@ -163,25 +165,13 @@ class SkillSection extends React.Component{
 
     render(){
         var main = (
-            <div className="history-section">
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-10 nopadding">
-                            <div className="section-header">Skills</div>
-                        </div>
-                        <div className="col-2 nopadding">
-                            <div onClick={this.addSkill} className="add-button">
-                                {add_icon}
-                            </div>
-                        </div>
-                    </div>
-                    { 
-                        Object.keys(this.state.skills).map((value,index)=>{
-                            return this.getSkillSection(value);
-                        })
-                    }                    
-                </div>
-            </div>
+            <SectionBody heading="Skills" onAdd={this.addSkill}>                
+            { 
+                Object.keys(this.state.skills).map((value,index)=>{
+                    return this.getSkillSection(value);
+                })
+            } 
+            </SectionBody>
 
         );
         return main;
@@ -295,25 +285,13 @@ class ContactSection extends React.Component{
     }
     render(){
         var main = (
-            <div className="history-section">
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-10 nopadding">
-                            <div className="section-header">Contacts</div>
-                        </div>
-                        <div className="col-2 nopadding">
-                            <div onClick={this.addContact} className="add-button">
-                                {add_icon}
-                            </div>
-                        </div>
-                    </div>
-                    {
-                        Object.keys(this.state.contacts).map((value,index)=>{
-                            return this.getContactRow(value);
-                        })
-                    }               
-                </div>
-            </div>
+            <SectionBody heading="Contacts" onAdd={this.addContact}>
+            {
+                Object.keys(this.state.contacts).map((value,index)=>{
+                    return this.getContactRow(value);
+                })
+            }
+            </SectionBody>
 
         );
         return main;
@@ -564,25 +542,13 @@ class ExperienceSection extends React.Component{
 
     render(){       
         var main = (
-            <div className="history-section">
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-10 nopadding">
-                            <div className="section-header">Experiences</div>
-                        </div>
-                        <div className="col-2 nopadding">
-                            <div onClick={this.onAdd} className="add-button">
-                                {add_icon}
-                            </div>
-                        </div>
-                    </div>
-                    {
-                        Object.keys(this.state.xp).map((id,index)=>{
-                            return <JobProfile key={id} id={id} {...this.state.xp[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
-                        })
-                    }                    
-                </div>
-            </div>
+            <SectionBody heading="Experiences" onAdd={this.onAdd}>
+            {
+                Object.keys(this.state.xp).map((id,index)=>{
+                    return <JobProfile key={id} id={id} {...this.state.xp[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                })
+            }
+            </SectionBody>
 
         );
         return main;
@@ -815,25 +781,13 @@ class EductaionSection extends React.Component{
 
     render(){
         var main = (
-            <div className="history-section">
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-10 nopadding">
-                            <div className="section-header">Education</div>
-                        </div>
-                        <div className="col-2 nopadding">
-                            <div onClick={this.onAdd} className="add-button">
-                                {add_icon}
-                            </div>
-                        </div>
-                    </div>
-                    {
-                        Object.keys(this.state.edu).map((id,index)=>{
-                            return <Eductaion key={id} id={id} {...this.state.edu[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
-                        })
-                    } 
-                </div>
-            </div>
+            <SectionBody heading="Eductions" onAdd={this.onAdd}>
+            {
+                Object.keys(this.state.edu).map((id,index)=>{
+                    return <Eductaion key={id} id={id} {...this.state.edu[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                })
+            }
+            </SectionBody>
 
         );
         return main;
@@ -895,7 +849,7 @@ class ProfileSummary extends React.Component{
                                 <span>{this.state.name}</span>
                                 <span onClick={this.onEdit}>{edit_icon}</span>
                             </div>
-                            { this.state.summary && <span className="company-name">{splitTextToPara(this.state.summary)}</span>}
+                            { this.state.summary && <span >{splitTextToPara(this.state.summary)}</span>}
                             
                         </div>
                     </div>
@@ -923,7 +877,7 @@ class ProfileSummary extends React.Component{
                             </div>
                             
                             <span className="textarea-label">Sumarry:</span>
-                            <textarea className="company-name" 
+                            <textarea
                                     placeholder="summary" 
                                     value={this.state.summary} 
                                     onChange={(val)=>this.setState({summary:val.target.value})} />
@@ -1026,31 +980,19 @@ class ProfileSummarySection extends React.Component{
     }
     render(){
         var main = (
-            <div className="history-section">
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-10 nopadding">
-                            <div className="section-header">Profile Summaries</div>
-                        </div>
-                        <div className="col-2 nopadding">
-                            <div onClick={this.onAdd} className="add-button">
-                                {add_icon}
-                            </div>
-                        </div>
-                    </div>
-                    {
-                        Object.keys(this.state.profSum).map((id,index)=>{
-                            return <ProfileSummary key={id} id={id} {...this.state.profSum[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
-                        })
-                    }
-                </div>
-            </div>
+
+            <SectionBody heading="Profile Summaries" onAdd={this.onAdd}>
+            {
+                Object.keys(this.state.profSum).map((id,index)=>{
+                    return <ProfileSummary key={id} id={id} {...this.state.profSum[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                })
+            }
+            </SectionBody>
 
         );
         return main;
     }
 }
-
 
 
 
@@ -1124,7 +1066,7 @@ class ProjectSummary extends React.Component{
                 <div className="col-10 nopadding text-wrap">
                     <div className="section-content">
                         <div className="job-profile">
-                            <textarea className="company-name" 
+                            <textarea 
                                 placeholder="Specific keyword for the project" 
                                 value={this.state.summary} 
                                 onChange={(val)=>this.setState({summary:val.target.value})}
@@ -1306,12 +1248,12 @@ class Project extends React.Component{
                             </div>
 
                             <CollasableDisplay name="Story">
-                                { this.state.story && <span className="company-name">{splitTextToPara(this.state.story)}</span>}
+                                { this.state.story && <span style={{fontStyle:'normal', fontSize:'10pt'}} className="company-name">{splitTextToPara(this.state.story)}</span>}
                             </CollasableDisplay>
                             
                             <br/>
 
-                            <CollasableDisplay name="Summaries" onClickAdd={this.onSummaryAdd}>
+                            <CollasableDisplay name="Summaries" onClickAdd={this.onSummaryAdd} expendedDefault >
                             {
                                 Object.keys(this.state.summaries).map((id,index)=>{
                                     return <ProjectSummary key={id} id={id} {...this.state.summaries[id]} onChange={this.onSummaryUpdate} onDelete={this.onSummaryDelete}/>
@@ -1345,7 +1287,7 @@ class Project extends React.Component{
                             </div>
 
                             <span className="textarea-label">Keywords</span>
-                                <textarea className="company-name" 
+                                <textarea className="" 
                                         placeholder="Specific keyword for the project" 
                                         value={this.state.keywords} 
                                         onChange={(val)=>this.setState({keywords:val.target.value})}
@@ -1353,7 +1295,7 @@ class Project extends React.Component{
                                         />
                             
                             <span className="textarea-label">Story</span>
-                            <textarea className="company-name" 
+                            <textarea className="" 
                                     placeholder="Write the story of the project." 
                                     value={this.state.story} 
                                     onChange={(val)=>this.setState({story:val.target.value})} />
@@ -1456,25 +1398,13 @@ class ProjectSection extends React.Component{
     }
     render(){
         var main = (
-            <div className="history-section">
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-10 nopadding">
-                            <div className="section-header">Projects</div>
-                        </div>
-                        <div className="col-2 nopadding">
-                            <div onClick={this.onAdd} className="add-button">
-                                {add_icon}
-                            </div>
-                        </div>
-                    </div>
-                    {
-                        Object.keys(this.state.projects).map((id,index)=>{
-                            return <Project key={id} id={id} {...this.state.projects[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
-                        })
-                    }
-                </div>
-            </div>
+            <SectionBody heading="Projects" onAdd={this.onAdd}>
+                {
+                    Object.keys(this.state.projects).map((id,index)=>{
+                        return <Project key={id} id={id} {...this.state.projects[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
+                    })
+                }                
+            </SectionBody>
 
         );
         return main;
