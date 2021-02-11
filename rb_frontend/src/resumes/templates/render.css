@@ -1,0 +1,37 @@
+
+/* This file defines css so that the rendered pdfs have correct layout */
+
+body{
+    margin: 0;
+    padding: 0;
+    size: A4;
+    height: 374.5mm;
+    display: -webkit-box;
+
+}
+
+#main {
+    margin: 0;
+    padding: 0;
+    font-size: 12pt;
+    font-family: "Droid Sans";
+
+    display: -webkit-box;
+    display: flex;
+    width: 100%;
+    height: 100%;   
+
+}
+#content-section {
+    display: block;
+    padding: 2em;
+    width: 66%;
+    height: 100%;
+
+}
+#sidebar-section {
+    display: block;
+    width: 35%;
+    height: 100%;
+}
+

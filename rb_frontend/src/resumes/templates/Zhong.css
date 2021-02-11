@@ -1,0 +1,86 @@
+
+@import url('https://fonts.googleapis.com/css?family=Droid+Sans');
+
+.resume-body{
+    font-size: 12pt;
+    font-family: "Droid Sans";
+    padding: 0;
+
+}
+.resume-sub-section{
+    padding: 1em;
+}
+
+.resume-sub-section .heading{
+    font-size: 14pt;
+    font-weight: bold;
+}
+
+
+#sidebar-section{
+    padding-top: 1em;
+    background-color: rgb(247, 247, 247);
+}
+.user-name{
+    font-size: 20pt;
+    font-weight: bold;
+}
+.user-profile{
+    font-size: 12pt;    
+}
+.profile-summary{
+    margin-top: 0.5em;
+}
+
+
+.labelled-info{
+    margin: 0.3em;
+    font-size: 11pt;
+    display: inline-block;
+}
+.labelled-info .label-ld{
+    padding: 0.3em;
+    display: inline;
+    font-weight: bold;
+}
+.labelled-info .info{
+    padding: 0.3em;
+    display: inline;
+}
+
+
+
+.labelled-desc {
+    margin: 0.5em;
+}
+
+.labelled-desc .label-ld{
+    font-weight: bold;
+    display: inline;    
+
+}
+.labelled-desc .desc{
+    font-size: 11pt;
+}
+.labelled-desc .timeframe{
+    display: inline;
+    font-size: 11pt;
+    padding-left: 1em;
+    font-style: oblique;
+}
+.labelled-desc .sub-label{
+    font-size: 11pt;
+}
+
+
+.skill-section{
+    display: inline;
+}
+.skill-section .skill-item{
+    display: inline-block;
+    padding: 0.3em;
+    margin: 0.2em;
+    font-size: 11pt;
+    border: 1px solid black;
+    border-radius: 0.5em;
+}
