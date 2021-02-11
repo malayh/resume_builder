@@ -61,8 +61,26 @@ class Logout(APIView):
         return Response(data={"msg":"Logged out"},status=status.HTTP_200_OK)
 
 
-class UserOperations(APIView):
-    pass
+class UserInfo(APIView):
+    def get(self,request):
+        _d = {
+            'email' : request.user.u_email,
+            'name': request.user.u_name
+        }
+        print(type(request.user))
+        return Response(_d)
+
+    def put(self,request):
+        name = request.data['name'] if 'name' in request.data else None
+        if not name:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        _user = request.user
+        if name:
+            _user.u_name = name
+
+        _user.save()
+        return Response({"msg":"Updated"})
 
 class Test(APIView):
     def get(self,request,*args,**kwargs):
