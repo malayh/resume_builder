@@ -1411,6 +1411,100 @@ class ProjectSection extends React.Component{
     }
 }
 
+class UserInfoSection extends React.Component{
+    constructor(props){
+        super(props);
+        this.state = {
+            name : 'Name Lastname',
+        }
+
+        this.dispRef = React.createRef();
+        this.formRef = React.createRef();
+
+        this.prevState = null;
+
+        this.onSave = this.onSave.bind(this);
+        this.onEdit = this.onEdit.bind(this);
+
+        this.baseApiUrl = configs.apiHostUrl;
+        this.authHeaders = { 
+            'Content-Type':'application/json',
+            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
+        };
+    }
+    componentDidMount(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+
+        fetch(this.baseApiUrl+'users/',{ headers: this.authHeaders,method:"GET" })
+            .then(resp => resp.json())
+            .then(data => {
+                this.setState({name:data['name']})
+            });
+    }
+
+    onEdit(){
+        this.dispRef.current.style.display='None';
+        this.formRef.current.style.display='';
+        this.prevState = Object.assign({},this.state);        
+    }
+    onSave(){
+        this.formRef.current.style.display='None'; 
+        this.dispRef.current.style.display='';
+
+        for(var key in this.prevState){
+            if(this.state[key] !== this.prevState[key]){
+                fetch(this.baseApiUrl+'users/',{ headers: this.authHeaders,method:"PUT", body: JSON.stringify(this.state)})
+                    .then(resp => resp.json(), error => {});
+                this.prevState = null;
+                return;
+            }
+        }
+
+    }
+
+    render(){
+        var disp = (
+            <div className="row" ref={this.dispRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>{this.state.name}</span>
+                                <span onClick={this.onEdit}>{edit_icon}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+        var form = (
+            <div className="row" ref={this.formRef}>
+                <div className="col-10 nopadding text-wrap">
+                    <div className="section-content">
+                        <div className="job-profile">
+                            <div className="profile-name">
+                                <span>
+                                    <input placeholder="Name" 
+                                            value={this.state.name} 
+                                            onChange={(val)=>this.setState({name:val.target.value})}/>
+                                </span> 
+                                <span onClick={this.onSave}>{done_icon}</span>
+                            </div>                            
+                        </div>
+                    </div>
+                </div>
+            </div>);
+
+        var main =(
+            <SectionBody heading="User Info">
+                {disp}{form}
+            </SectionBody>
+        );
+        return main;
+    }
+}
+
 export default class HistoryPage extends React.Component {
     constructor(props){
         // @props: onNav : function : takes 'history' or 'resumes'
@@ -1437,6 +1531,7 @@ export default class HistoryPage extends React.Component {
                     </div>
                     <div className="col-lg-3 col-md-6">
                         <EductaionSection/>
+                        <UserInfoSection/>
                     </div>
                 </div>
             </div>
