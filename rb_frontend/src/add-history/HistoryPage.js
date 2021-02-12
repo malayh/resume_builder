@@ -11,6 +11,8 @@ import {
 } from './components';
 
 import {SectionBody} from '../common/Section';
+import {DBEndpoint} from '../common/DB';
+
 import {delete_icon,add_icon,edit_icon,done_icon} from '../common/Icons';
 
 import {configs} from '../Config';
@@ -27,92 +29,46 @@ class SkillSection extends React.Component{
             skills : {}
         }
 
-        this.nextNegativeId = -1;
-        this.negetiveIds = new Array();
 
         this.updateSkill = this.updateSkill.bind(this);
         this.deleteSkill = this.deleteSkill.bind(this);
         this.addSkill = this.addSkill.bind(this);
-        this.loadAPIData = this.loadAPIData.bind(this);
 
-        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
-        this.authHeaders = { 
-            'Content-Type':'application/json',
-            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
-        };
+        this.dbEndpoint = new DBEndpoint('coreapi/skills/');
         
     }
 
-    loadAPIData(data){
-        // data is an object returned by calling GET on '/coreapi/skills/'
-        var new_skills = {};
-        for(var i = 0; i < data.length; i++){
-            new_skills[data[i]['id']] = {name: data[i]['name'], score: data[i]['score']};
-        }
-        this.setState({skills:new_skills});
-    }
-
-    pushNewDataToServer(){
-        // Takes all this.negetiveIds and push them to the server
-        // Then update the state with valid ids recieved fromt the server
-        //
-        // This process may be simplified.
-        for(const negId of this.negetiveIds){
-            fetch(this.baseApiUrl+'skills/',{ headers: this.authHeaders,method:"POST", body: JSON.stringify(this.state.skills[negId]) })
-                .then(resp => resp.json())
-                    .then((data)=>{
-                            var new_skill = {name: data['name'], score: data['score']};
-                            var skills_copy = Object.assign({},this.state.skills);
-                            delete skills_copy[negId];
-                            skills_copy[data['id']] = new_skill;
-                            this.setState({skills:skills_copy});                        
-                         },
-                         (error) => {
-                             // TODO: Handle this erro
-                         }                    
-                    
-                    );
-        }
-
-        this.negetiveIds = [];
-        this.nextNegativeId = -1;
-    }
-
     componentDidMount(){
-        // TODO: NEED TO HANDLE API error
-        fetch(this.baseApiUrl+'skills/',{headers:this.authHeaders,method:"GET"})
-            .then(resp => resp.json())
-                .then((data)=>{this.loadAPIData(data)});
+        this.dbEndpoint.readAll()
+            .then(data => {
+                var new_skills = {};
+                for(var i of data){
+                    new_skills[i['id']] = {name: i['name'], score: i['score']};
+                }
+                this.setState({skills:new_skills});
+
+            });
     }
     
     updateSkill(id,key,value){
         var skills_copy = Object.assign({},this.state.skills);
         skills_copy[id][key] = value;
 
-        fetch(this.baseApiUrl+'skills/'+id+'/',{ headers: this.authHeaders,method:"PUT", body: JSON.stringify(skills_copy[id]) })
-            .then(resp => resp.json())
-            .then((data) => {
-                    this.setState({skills:skills_copy});
-                },
-                (error) =>{
-                    // todo: handle error here
-                }
-            );
+        this.dbEndpoint.updateOne(id,skills_copy[id])
+            .then(()=>{
+                this.setState({skills:skills_copy});
+            });
         
     }
     
     deleteSkill(id){
         var skills_copy = Object.assign({},this.state.skills);
-        fetch(this.baseApiUrl+'skills/'+id+'/',{headers:this.authHeaders,method:"DELETE"})
-            .then((resp) => {
-                    delete skills_copy[id];
-                    this.setState({skills:skills_copy});
-                },
-                (error) => {
-                    // TODO: HANDLE this error.
-                }
-            );
+        delete skills_copy[id];
 
+        this.dbEndpoint.deleteOne(id)
+            .then(()=>{
+                this.setState({skills:skills_copy});
+            });
     }
 
     getSkillSection(skill_id){
@@ -140,27 +96,15 @@ class SkillSection extends React.Component{
     }
 
     addSkill(){
-        //TODO: Need to handle api error
-
-        // First add a skill with a negetive id
-        // This will create a skill name 'Unnamed', score 0
-        // Then push the information to the server, then it will update the negetive id to a valid id
-        // 
-        // I am making two calls to create on entity. THAT IS BAD
-
         var new_skill = {name:'Skill Name',score:1}
-        var skills_copy = Object.assign({},this.state.skills);
-        skills_copy[''+this.nextNegativeId] = new_skill;
+        
+        this.dbEndpoint.createOne(new_skill)
+        .then(data => {
+                var skills_copy = Object.assign({},this.state.skills);
+                skills_copy[data['id']] = {name:data['name'], score:data['score']};
+                this.setState({skills:skills_copy});
 
-        
-        this.negetiveIds.push(''+this.nextNegativeId);
-        this.nextNegativeId--;
-        
-        this.setState({skills:skills_copy},()=>{
-            this.pushNewDataToServer();
-        });
-        
-        
+            });
     }
 
     render(){
@@ -187,58 +131,42 @@ class ContactSection extends React.Component{
             contacts : {}
         }
 
-        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
-        this.authHeaders = { 
-            'Content-Type':'application/json',
-            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
-        };
+        this.dbEndpoint = new DBEndpoint('coreapi/contacts/');
 
         this.updateContact = this.updateContact.bind(this);
         this.addContact = this.addContact.bind(this);
 
     }
     componentDidMount(){
-        fetch(this.baseApiUrl+'contacts/',{headers:this.authHeaders,method:"GET"})
-            .then(resp => resp.json())
+        this.dbEndpoint.readAll()
             .then((data)=>{
-                        var new_contacts = {};
-                        for(const i of data){
-                            new_contacts[i['id']] = {label:i['label'], value:i['value']}
-                        }
-                        this.setState({contacts:new_contacts});
-                    },
-                    (error) => {
-                        //Handle error here
-                    }
-                );
+                var new_contacts = {};
+                for(const i of data){
+                    new_contacts[i['id']] = {label:i['label'], value:i['value']}
+                }
+                this.setState({contacts:new_contacts});
+            });
     }
+
     updateContact(id,key,value){
         var contacts_copy = Object.assign({},this.state.contacts);
         contacts_copy[id][key] = value;
-
-        fetch(this.baseApiUrl+'contacts/'+id+'/',{ headers: this.authHeaders,method:"PUT", body: JSON.stringify(contacts_copy[id]) })
-            .then(resp => resp.json())
-            .then((data) => {
-                    this.setState({contacts:contacts_copy});
-                },
-                (error) =>{
-                    // todo: handle error here
-                }
-            );
+        this.dbEndpoint.updateOne(id,contacts_copy[id])
+            .then(()=>{
+                this.setState({contacts:contacts_copy});
+            });
 
     }
     deleteContact(id){
         var contacts_copy = Object.assign({},this.state.contacts);
-        fetch(this.baseApiUrl+'contacts/'+id+'/',{headers:this.authHeaders,method:"DELETE"})
+        delete contacts_copy[id];
+
+        this.dbEndpoint.deleteOne(id)
             .then((resp) => {
-                    delete contacts_copy[id];
-                    this.setState({contacts:contacts_copy});
-                },
-                (error) => {
-                    // TODO: HANDLE this error.
-                }
-            );
+                this.setState({contacts:contacts_copy});
+            });
     }
+
     getContactRow(id){
         var row = (
             <div className="row" key={id}>
@@ -262,27 +190,18 @@ class ContactSection extends React.Component{
         return row;
          
     }
+
     addContact(){
-        var new_contact = { label:'Contact Label', value:'Contact Details'}
-        var contacts_copy = Object.assign({},this.state.contacts);
-        contacts_copy["new"] = new_contact;
-        
-        this.setState({contacts:contacts_copy},()=>{
-            fetch(this.baseApiUrl+'contacts/',{ headers: this.authHeaders, method:"POST", body: JSON.stringify(this.state.contacts["new"])})
-                .then(resp => resp.json())
-                .then((data)=>{
-                        var contact = {label: data['label'], value: data['value']};
-                        var _contacts = Object.assign({},this.state.contacts);
-                        delete _contacts["new"];
-                        _contacts[data['id']] = contact;
-                        this.setState({contacts:_contacts}); 
-                    },
-                    (error)=>{
-                        //TODO:
-                    }
-                );
-        });
+        var new_contact = { label:'Contact Label', value:'Contact Details'};
+
+        this.dbEndpoint.createOne(new_contact)
+            .then(data => {
+                var contacts_copy = Object.assign({},this.state.contacts);
+                contacts_copy[data['id']] = new_contact;
+                this.setState({contacts:contacts_copy});
+            });
     }
+
     render(){
         var main = (
             <SectionBody heading="Contacts" onAdd={this.addContact}>
@@ -440,7 +359,9 @@ class ExperienceSection extends React.Component{
         this.onUpdate = this.onUpdate.bind(this);
         this.onDelete = this.onDelete.bind(this);
         this.onAdd = this.onAdd.bind(this);
-        
+
+        this.dbEndpoint = new DBEndpoint('coreapi/jobprofiles/');
+
         this.baseApiUrl = configs.apiHostUrl+'coreapi/';
         this.authHeaders = { 
             'Content-Type':'application/json',
@@ -459,24 +380,22 @@ class ExperienceSection extends React.Component{
             is_current: obj.is_current
         }
 
-        this.updateOnServer(obj.id,xp_copy[obj.id])
-            .then(()=>{
+        this.dbEndpoint.updateOne(obj.id, xp_copy[obj.id])
+            .then(data => {
                 this.setState({xp:xp_copy});
-            })
+
+            });
 
     }
 
     onDelete(id){
         var xp_copy = Object.assign({},this.state.xp);
         delete xp_copy[id];
-        fetch(this.baseApiUrl+'jobprofiles/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
-            .then(resp => resp.json())
-            .then((data)=>{
+
+        this.dbEndpoint.deleteOne(id)
+            .then(data =>{
                 this.setState({xp:xp_copy});
-                },(error) => {
-                    //TODO: Handle error here
-                }
-            );
+            });
         
     }
 
@@ -489,7 +408,7 @@ class ExperienceSection extends React.Component{
             end_time: null,
             is_current: false
         }
-        this.createOnServer(new_xp)
+        this.dbEndpoint.createOne(new_xp)
             .then((data)=>{
                 let id = data['id'];
                 var _d = Object.assign({},data);
@@ -503,41 +422,22 @@ class ExperienceSection extends React.Component{
         
     }
 
-
-    async getAllFromApi(){
-        let resp = await fetch(this.baseApiUrl+'jobprofiles/',{ headers: this.authHeaders,method:"GET"});
-        let data = await resp.json();
-
-        let new_xp = {}
-        for(var i of data){
-            new_xp[i.id] = {
-                profile : i.profile,
-                company : i.company, 
-                location: i.location,
-                start_time: parseToDate(i.start_time),
-                end_time: parseToDate(i.end_time),
-                is_current: i.is_current
-            }
-        }
-        this.setState({xp:new_xp});
-    }
-
-    async createOnServer(obj){
-        // obj is a xp object
-        let resp = await fetch(this.baseApiUrl+'jobprofiles/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
-    }
-
-    async updateOnServer(id,obj){
-        let resp = await fetch(this.baseApiUrl+'jobprofiles/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
-    }
-
     componentDidMount(){
-        // TODO: Catch shit here
-        this.getAllFromApi();
+        this.dbEndpoint.readAll()
+            .then(data => {
+                let new_xp = {}
+                for(var i of data){
+                    new_xp[i.id] = {
+                        profile : i.profile,
+                        company : i.company, 
+                        location: i.location,
+                        start_time: parseToDate(i.start_time),
+                        end_time: parseToDate(i.end_time),
+                        is_current: i.is_current
+                    }
+                }
+                this.setState({xp:new_xp});
+            });
     }
 
     render(){       
@@ -690,11 +590,7 @@ class EductaionSection extends React.Component{
         this.onDelete = this.onDelete.bind(this);
         this.onAdd = this.onAdd.bind(this);
 
-        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
-        this.authHeaders = { 
-            'Content-Type':'application/json',
-            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
-        };
+        this.dbEndpoint = new DBEndpoint('coreapi/edus/');
     }
 
     onUpdate(obj){
@@ -706,7 +602,7 @@ class EductaionSection extends React.Component{
         edu_copy[id] = obj_copy;
 
 
-        this.updateOnServer(id,obj_copy)
+        this.dbEndpoint.updateOne(id,obj_copy)
             .then(()=>{
                 this.setState({edu:edu_copy});
             });
@@ -716,14 +612,10 @@ class EductaionSection extends React.Component{
     onDelete(id){
         var edu_copy = Object.assign({},this.state.edu);
         delete edu_copy[id];
-        fetch(this.baseApiUrl+'edus/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
-            .then(resp => resp.json())
-            .then((data)=>{
+        this.dbEndpoint.deleteOne(id)
+            .then(data => {
                 this.setState({edu:edu_copy});
-                },(error) => {
-                    //TODO: Handle error here
-                }
-            );
+            });
     }
 
     onAdd(){
@@ -734,7 +626,7 @@ class EductaionSection extends React.Component{
             end_time: null,
             is_current: false
         }
-        this.createOnServer(new_edu)
+        this.dbEndpoint.createOne(new_edu)
             .then((data)=>{
                 var new_id = data['id'];
                 delete data['id'];
@@ -743,40 +635,22 @@ class EductaionSection extends React.Component{
                 this.setState({edu:edu_copy});
             });
     }
-    
-    async getAllFromApi(){
-        let resp = await fetch(this.baseApiUrl+'edus/',{ headers: this.authHeaders,method:"GET"});
-        let data = await resp.json();        
-
-        let new_edu = {};
-        for(var i of data){
-            let new_id = i['id'];
-            delete i['id']; 
-            i['start_time'] = parseToDate(i['start_time']);
-            i['end_time'] = parseToDate(i['end_time']);
-
-            new_edu[new_id] = i;
-        }
-
-        this.setState({edu:new_edu});
-        
-    }
-
-    async createOnServer(obj){
-        // obj is a edu object
-        let resp = await fetch(this.baseApiUrl+'edus/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
-    }
-
-    async updateOnServer(id,obj){
-        let resp = await fetch(this.baseApiUrl+'edus/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
-    }
 
     componentDidMount(){
-        this.getAllFromApi();
+        this.dbEndpoint.readAll()
+            .then(data => {
+                    let new_edu = {};
+                    for(var i of data){
+                        let new_id = i['id'];
+                        delete i['id']; 
+                        i['start_time'] = parseToDate(i['start_time']);
+                        i['end_time'] = parseToDate(i['end_time']);
+
+                        new_edu[new_id] = i;
+                    }
+
+                    this.setState({edu:new_edu});
+            });
     }
 
     render(){
@@ -904,15 +778,11 @@ class ProfileSummarySection extends React.Component{
         this.onUpdate = this.onUpdate.bind(this);
         this.onDelete = this.onDelete.bind(this);
 
-        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
-        this.authHeaders = { 
-            'Content-Type':'application/json',
-            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
-        };
+        this.dbEndpoint = new DBEndpoint('coreapi/summaries/');
     }
     onAdd(){
-        var new_ps = {name:"Profile Summary",summary:"Edit this summary"};
-        this.createOnServer(new_ps)
+        var new_ps = {name:"Profile Summary",summary:"Edit this summary"};        
+        this.dbEndpoint.createOne(new_ps)
             .then((data)=>{
                 let id = data['id'];
                 delete data['id'];
@@ -929,55 +799,35 @@ class ProfileSummarySection extends React.Component{
         delete _obj['id'];
         _ps[id] = _obj;
 
-        this.updateOnServer(id,_obj)
+        this.dbEndpoint.updateOne(id,_obj)
             .then(()=>{
                 this.setState({profSum:_ps});
             });
-
     }
+
     onDelete(id){
         var _ps = Object.assign({},this.state.profSum);
         delete _ps[id];
-        fetch(this.baseApiUrl+'summaries/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
-            .then(resp => resp.json())
-            .then((data)=>{
+        this.dbEndpoint.deleteOne(id)
+            .then(()=>{
                 this.setState({profSum:_ps});
-                },(error) => {
-                    //TODO: Handle error here
-                }
-            );
-    }
-
-    async getAllFromApi(){
-        let resp = await fetch(this.baseApiUrl+'summaries/',{ headers: this.authHeaders,method:"GET"});
-        let data = await resp.json();
-
-        var new_ps = {}
-        for(var i of data){
-            var id = i['id'];
-            delete i['id'];
-            new_ps[id] = i;
-        }
-
-        this.setState({profSum:new_ps});
-    }
-
-    async updateOnServer(id,obj){
-        let resp = await fetch(this.baseApiUrl+'summaries/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
-    }
-    
-    async createOnServer(obj){
-        // obj is a edu object
-        let resp = await fetch(this.baseApiUrl+'summaries/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
+            });
     }
 
     componentDidMount(){
-        this.getAllFromApi();
+        this.dbEndpoint.readAll()
+            .then(data =>{
+                var new_ps = {}
+                for(var i of data){
+                    var id = i['id'];
+                    delete i['id'];
+                    new_ps[id] = i;
+                }
+
+                this.setState({profSum:new_ps});
+            });
     }
+
     render(){
         var main = (
 
@@ -993,8 +843,6 @@ class ProfileSummarySection extends React.Component{
         return main;
     }
 }
-
-
 
 class ProjectSummary extends React.Component{
     constructor(props){
@@ -1322,17 +1170,13 @@ class ProjectSection extends React.Component{
         this.onUpdate = this.onUpdate.bind(this);
         this.onDelete = this.onDelete.bind(this);
 
-        this.baseApiUrl = configs.apiHostUrl+'coreapi/';
-        this.authHeaders = { 
-            'Content-Type':'application/json',
-            'Authorization': 'token '+window.localStorage.getItem('rb_access_token')
-        };
+        this.dbEndpoint = new DBEndpoint('coreapi/projects/');
     }
 
     onAdd(){
         var new_project = {title:"Project Title",story:"Add the story here",keywords:"coma,separated,keywords"};
 
-        this.createOnServer(new_project)
+        this.dbEndpoint.createOne(new_project)
             .then((data)=>{
                 let id = data['id'];
                 delete data['id'];
@@ -1348,7 +1192,7 @@ class ProjectSection extends React.Component{
         delete _obj['id'];
         _projects[id] = _obj;
 
-        this.updateOnServer(id,_obj)
+        this.dbEndpoint.updateOne(id,_obj)
             .then(()=>{
                 this.setState({projects:_projects});
             });
@@ -1356,45 +1200,26 @@ class ProjectSection extends React.Component{
     onDelete(id){
         var _p = Object.assign({},this.state.projects);
         delete _p[id];
-        fetch(this.baseApiUrl+'projects/'+id+'/', { headers: this.authHeaders, method:'DELETE'})
-            .then(resp => resp.json())
-            .then((data)=>{
+
+        this.dbEndpoint.deleteOne(id)
+            .then(()=>{
                 this.setState({projects:_p});
-                },(error) => {
-                    //TODO: Handle error here
-                }
-            );
+            });
     }
-
-    async updateOnServer(id,obj){
-        let resp = await fetch(this.baseApiUrl+'projects/'+id+'/', { headers: this.authHeaders, method:"PUT", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
-    }
-
-    async getAllFromApi(){
-        let resp = await fetch(this.baseApiUrl+'projects/',{ headers: this.authHeaders,method:"GET"});
-        let data = await resp.json();
-
-        var projects = {}
-        for(var i of data){
-            var id = i['id'];
-            delete i['id'];
-            projects[id] = i;
-        }
-
-        this.setState({projects:projects});
-    }
-
-    async createOnServer(obj){
-        // obj is a edu object
-        let resp = await fetch(this.baseApiUrl+'projects/', { headers: this.authHeaders, method:"POST", body:JSON.stringify(obj) });
-        let data = await resp.json();
-        return data;
-    }
-
     componentDidMount(){
-        this.getAllFromApi();
+        this.dbEndpoint.readAll()
+            .then(data => {
+
+                var projects = {}
+                for(var i of data){
+                    var id = i['id'];
+                    delete i['id'];
+                    projects[id] = i;
+                }
+        
+                this.setState({projects:projects});
+
+            });
     }
     render(){
         var main = (
