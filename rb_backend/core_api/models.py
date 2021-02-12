@@ -8,7 +8,7 @@ from users.models import RB_User
 #   seriallizer
 
 
-# Create your models here.
+# ------ Entity models ------
 class Contact_Details(models.Model):
     user_fk = models.ForeignKey(RB_User,on_delete=models.CASCADE)
     label = models.TextField()
@@ -58,57 +58,46 @@ class Projects_Summaries(models.Model):
     summary = models.TextField(null=False)
 
 
+
+# -------- Resume Composition models -----------
 class Resumes(models.Model):
     user_fk = models.ForeignKey(RB_User,on_delete=models.CASCADE)
     title = models.TextField()
-    profile = models.TextField()
+    job_profile_fk = models.ForeignKey(Job_Profiles,on_delete=models.SET_NULL,null=True)
     profile_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.SET_NULL,null=True)
 
-class Resume_Contact_Detail_Map(models.Model):
-    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0,unique=True)
-    contact_details_fk = models.ForeignKey(Contact_Details,on_delete=models.CASCADE)
-
-class Resume_Skill_Map(models.Model):
-    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0,unique=True)
-    skill_fk = models.ForeignKey(Skills,on_delete=models.CASCADE)
-
-class Resume_Project_Summary_Map(models.Model):
-    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0,unique=True)
-    project_summary_fk = models.ForeignKey(Projects_Summaries,on_delete=models.CASCADE)
-
-class Resume_Work_History_Map(models.Model):
-    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0,unique=True)
-    job_profile_fk = models.ForeignKey(Job_Profiles,on_delete=models.CASCADE)
-
-class Resume_Work_History_Project_Summary_Map(models.Model):
-    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    resume_wh_fk = models.ForeignKey(Resume_Work_History_Map,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0,unique=True)
-    project_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.CASCADE)
-
-class Resume_Education_Map(models.Model):
-    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0,unique=True)
-    education_fk = models.ForeignKey(Educations,on_delete=models.CASCADE)
-
-class Resume_Education_Project_Summary_Map(models.Model):
-    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    resume_edu_fk = models.ForeignKey(Resume_Education_Map,on_delete=models.CASCADE)
-    project_summary_fk = models.ForeignKey(Profile_Summaries,on_delete=models.CASCADE)
-    position = models.IntegerField(default=0,unique=True)
-
-class Resume_Content_Section_Positions(models.Model):
+class Resume_Subsections(models.Model):
     user_fk = models.ForeignKey(RB_User,on_delete=models.CASCADE)
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
-    section_name = models.TextField()
-    position = models.IntegerField(default=0,unique=True)
+    title = models.TextField(null=True)
+    position = models.IntegerField()
+    class Meta:
+        unique_together = ('resume_fk', 'position',)
 
 
+class Abstract_Entity_Resume_Map(models.Model):
+    user_fk = models.ForeignKey(RB_User,on_delete=models.CASCADE)
+    resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
+    resume_subsection_fk = models.ForeignKey(Resume_Subsections,on_delete=models.CASCADE)
+    position = models.IntegerField()
+    class Meta:
+        abstract = True
+        unique_together = ('resume_subsection_fk', 'position',)
 
+class Contact_Resume_Map(Abstract_Entity_Resume_Map):
+    contact_fk = models.ForeignKey(Contact_Details,on_delete=models.CASCADE)
+
+class Skill_Resume_Map(Abstract_Entity_Resume_Map):
+    skill_fk = models.ForeignKey(Skills,on_delete=models.CASCADE)
+
+class Education_Resume_Map(Abstract_Entity_Resume_Map):
+    education_fk = models.ForeignKey(Educations,on_delete=models.CASCADE)
+
+class Project_Resume_Map(Abstract_Entity_Resume_Map):
+    project_fk = models.ForeignKey(Projects,on_delete=models.CASCADE)
+
+class Project_Summary_Resume_Map(Abstract_Entity_Resume_Map):
+    project_summary_fk = models.ForeignKey(Projects_Summaries,on_delete=models.CASCADE)
 
        
 

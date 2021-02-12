@@ -40,47 +40,52 @@ class Projects_Summaries_Serializer(serializers.ModelSerializer):
         fields = ['id','project_fk','summary']
         fks = ["project_fk"]
 
-
-class Resumes_Serializer(serializers.ModelSerializer):
+class Resumes_S(serializers.ModelSerializer):
     class Meta:
         model = Resumes
-        fields = ['id','title','profile','profile_summary_fk']
-        fks = ["profile_summary_fk"]
+        fields = ['id','title','job_profile_fk','profile_summary_fk']
+        fks = ['job_profile_fk','profile_summary_fk']
+
+# class Resumes_Serializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Resumes
+#         fields = ['id','title','profile','profile_summary_fk']
+#         fks = ["profile_summary_fk"]
         
-class Resume_CD_S(serializers.ModelSerializer):
-    class Meta:
-        model = Resume_Contact_Detail_Map
-        fields = ['position','contact_details_fk']
-        fks = ['contact_details_fk']
+# class Resume_CD_S(serializers.ModelSerializer):
+#     class Meta:
+#         model = Resume_Contact_Detail_Map
+#         fields = ['position','contact_details_fk']
+#         fks = ['contact_details_fk']
 
-class Resume_Skill_S(serializers.ModelSerializer):
-    class Meta:
-        model = Resume_Skill_Map
-        fields = ['position','skill_fk']
-        fks = ['skill_fk']
+# class Resume_Skill_S(serializers.ModelSerializer):
+#     class Meta:
+#         model = Resume_Skill_Map
+#         fields = ['position','skill_fk']
+#         fks = ['skill_fk']
 
-class Resume_PS_S(serializers.ModelSerializer):
-    class Meta:
-        model = Resume_Project_Summary_Map
-        fields = ['position','project_summary_fk']
-        fks = ['project_summary_fk']
+# class Resume_PS_S(serializers.ModelSerializer):
+#     class Meta:
+#         model = Resume_Project_Summary_Map
+#         fields = ['position','project_summary_fk']
+#         fks = ['project_summary_fk']
 
-class Resume_WH_S(serializers.ModelSerializer):
-    class Meta:
-        model = Resume_Work_History_Map
-        fields = ['position','job_profile_fk']
-        fks = ['job_profile_fk']
+# class Resume_WH_S(serializers.ModelSerializer):
+#     class Meta:
+#         model = Resume_Work_History_Map
+#         fields = ['position','job_profile_fk']
+#         fks = ['job_profile_fk']
 
-class Resume_Edu_S(serializers.ModelSerializer):
-    class Meta:
-        model = Resume_Education_Map
-        fields = ['position','education_fk']
-        fks = ['education_fk']
+# class Resume_Edu_S(serializers.ModelSerializer):
+#     class Meta:
+#         model = Resume_Education_Map
+#         fields = ['position','education_fk']
+#         fks = ['education_fk']
 
-class Resume_Section_S(serializers.ModelSerializer):
-    class Meta:
-        model = Resume_Content_Section_Positions
-        fields = ['id','section_name','position']
+# class Resume_Section_S(serializers.ModelSerializer):
+#     class Meta:
+#         model = Resume_Content_Section_Positions
+#         fields = ['id','section_name','position']
 
 
 
