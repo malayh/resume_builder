@@ -34,6 +34,7 @@ API DOC:
 class GenericList(APIView):
     MODEL_CLASS : ClassVar = None
     SERIALIZER_CLASS : ClassVar = None
+    allowed_filters = None
 
     def __init__(self,*args,**kwargs):
         if not self.MODEL_CLASS or not self.SERIALIZER_CLASS:
@@ -41,8 +42,25 @@ class GenericList(APIView):
 
         super(GenericList,self).__init__(*args,**kwargs)
 
+    def get_filter(self,query_params):
+        # query_params is requests.query_params
+        _f = {}
+        if not self.allowed_filters:
+            return _f
+
+        if not query_params:
+            return _f
+
+        for i in self.allowed_filters:
+            q = query_params.get(i)
+            if q:
+                _f[i] = q
+
+        return _f
+
     def get(self,request):
-        _data = self.MODEL_CLASS.objects.filter(user_fk=request.user).all()
+        _filters = self.get_filter(request.query_params)
+        _data = self.MODEL_CLASS.objects.filter(user_fk=request.user).filter(**_filters)
         return Response(self.SERIALIZER_CLASS(_data,many=True).data)
 
     def post(self,request):
@@ -215,6 +233,9 @@ class ProjectSummaryDetail(GenericDetail):
     SERIALIZER_CLASS = Projects_Summaries_Serializer
 
 
+
+
+
 class ResumeList(GenericList):
     MODEL_CLASS = Resumes
     SERIALIZER_CLASS = Resumes_S
@@ -223,321 +244,63 @@ class ResumeDetail(GenericDetail):
     MODEL_CLASS = Resumes
     SERIALIZER_CLASS = Resumes_S
 
-# class ResumeList(GenericList):
-#     MODEL_CLASS = Resumes
-#     SERIALIZER_CLASS = Resumes_Serializer
-
-# class ResumeDetail(GenericDetail):
-#     MODEL_CLASS = Resumes
-#     SERIALIZER_CLASS = Resumes_Serializer
-
-
-#----- Resume maping ------
-# Functionalities: Get lists of mapping, create mapping, delete mapping
-
-# class GenericResumeMappingList(APIView):
-#     MAP_MODEL : ClassVar = None
-#     SERIALIZER_CLASS: ClassVar = None
-
-#     def __init__(self,*args,**kwargs):
-#         if not self.MAP_MODEL or not self.SERIALIZER_CLASS:
-#             raise NotImplementedError("Set MAP_MODEL and SERIALIZER_CLASS")
-
-#         super(GenericResumeMappingList,self).__init__(*args,**kwargs)
-
-
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-    
-#     def is_fk_owner_valid(self,_s : serializers.ModelSerializer, user):
-#         """
-#         Checks whether logged in user is the owner of the fk sent
-#         """
-#         if hasattr(self.SERIALIZER_CLASS.Meta,'fks'):
-#             assert isinstance(self.SERIALIZER_CLASS.Meta.fks,list)
-#             for fk in self.SERIALIZER_CLASS.Meta.fks:
-#                 if fk in _s.validated_data and _s.validated_data[fk].user_fk != user:
-#                     return False
-#         return True
-
-#     def get(self,request,resume_id:int):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         objs = self.MAP_MODEL.objects.filter(resume_fk=_resume).all()
-
-#         return Response(self.SERIALIZER_CLASS(objs,many=True).data)
-
-#     def post(self,request,resume_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _s = self.SERIALIZER_CLASS(data=request.data)
-#         _s.is_valid(raise_exception=True)
-#         if not self.is_fk_owner_valid(_s,request.user):
-#             return Response(status=status.HTTP_403_FORBIDDEN)
-
-#         obj = _s.save(resume_fk=_resume)
-#         obj.save()
-
-#         return Response(self.SERIALIZER_CLASS(obj).data)
-    
-# class GenericResumeMappingDetail(APIView):
-#     MAP_MODEL : ClassVar = None
-#     SERIALIZER_CLASS: ClassVar = None
-#     MODEL_CLASS : ClassVar = None
-
-#     def __init__(self,*args,**kwargs):
-#         if not self.MAP_MODEL or not self.SERIALIZER_CLASS or not self.MODEL_CLASS:
-#             raise NotImplementedError("Set MAP_MODEL and SERIALIZER_CLASS")
-
-#         super(GenericResumeMappingDetail,self).__init__(*args,**kwargs)
-
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-    
-#     def delete(self,request,resume_id,cd_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _cd, _status = self.get_object_by_id(cd_id,request.user,model_class=self.MODEL_CLASS)
-#         if not _cd:
-#             return Response(status=_status)
-
-#         try:
-#             Resume_Contact_Detail_Map.objects.get(contact_details_fk=_cd,resume_fk=_resume).delete()            
-#         except Resume_Contact_Detail_Map.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-
-#         return Response({"msg":"Deleted"})
-
-
-# class Resume_CD_List(GenericResumeMappingList):
-#     MAP_MODEL = Resume_Contact_Detail_Map
-#     SERIALIZER_CLASS = Resume_CD_S
-
-# class Resume_CD_Detail(APIView):
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-
-#     def delete(self,request,resume_id,cd_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _cd, _status = self.get_object_by_id(cd_id,request.user,model_class=Contact_Details)
-#         if not _cd:
-#             return Response(status=_status)
-
-#         try:
-#             objs = Resume_Contact_Detail_Map.objects.filter(contact_details_fk=_cd,resume_fk=_resume).all()
-#             for i in objs:
-#                 i.delete()    
-#         except Resume_Contact_Detail_Map.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-
-#         return Response({"msg":"Deleted"})
-
-
-# class Resume_Skill_List(GenericResumeMappingList):
-#     MAP_MODEL = Resume_Skill_Map
-#     SERIALIZER_CLASS = Resume_Skill_S
-
-# class Resume_Skill_Detail(APIView):
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-
-#     def delete(self,request,resume_id,s_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _skl, _status = self.get_object_by_id(s_id,request.user,model_class=Skills)
-#         if not _skl:
-#             return Response(status=_status)
-
-#         try:
-#             objs = Resume_Skill_Map.objects.filter(skill_fk=_skl,resume_fk=_resume).all()
-#             for i in objs:
-#                 i.delete()
-#         except Resume_Skill_Map.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-
-#         return Response({"msg":"Deleted"})
-
-
-# class Resume_PS_List(GenericResumeMappingList):
-#     MAP_MODEL = Resume_Project_Summary_Map
-#     SERIALIZER_CLASS = Resume_PS_S          
-        
-# class Resume_PS_Detail(APIView):
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-
-#     def delete(self,request,resume_id,ps_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _ps, _status = self.get_object_by_id(ps_id,request.user,model_class=Projects_Summaries)
-#         if not _ps:
-#             return Response(status=_status)
-
-#         try:
-#             objs = Resume_Project_Summary_Map.objects.filter(project_summary_fk=_ps,resume_fk=_resume).all()
-#             for i in objs:
-#                 i.delete()
-#         except Resume_Project_Summary_Map.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-
-#         return Response({"msg":"Deleted"})
-
-
-# class Resume_WH_List(GenericResumeMappingList):
-#     MAP_MODEL = Resume_Work_History_Map
-#     SERIALIZER_CLASS = Resume_WH_S
-
-# class Resume_WH_Detail(APIView):
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-
-#     def delete(self,request,resume_id,jp_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _jp, _status = self.get_object_by_id(jp_id,request.user,model_class=Job_Profiles)
-#         if not _jp:
-#             return Response(status=_status)
-
-#         try:
-#             objs = Resume_Work_History_Map.objects.filter(job_profile_fk=_jp,resume_fk=_resume).all()
-#             for i in objs:
-#                 i.delete()
-#         except Resume_Work_History_Map.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-
-#         return Response({"msg":"Deleted"})
-
-
-# class Resume_Edu_List(GenericResumeMappingList):
-#     MAP_MODEL = Resume_Education_Map
-#     SERIALIZER_CLASS = Resume_Edu_S
-
-# class Resume_Edu_Detail(APIView):
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-
-#     def delete(self,request,resume_id,edu_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _edu, _status = self.get_object_by_id(edu_id,request.user,model_class=Educations)
-#         if not _edu:
-#             return Response(status=_status)
-
-#         try:
-#             objs = Resume_Education_Map.objects.filter(education_fk=_edu,resume_fk=_resume).all()
-#             for i in objs:
-#                 i.delete()
-#         except Resume_Education_Map.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-
-#         return Response({"msg":"Deleted"})
-
-
-# class Resume_Sections_List(GenericResumeMappingList):
-#     MAP_MODEL = Resume_Content_Section_Positions
-#     SERIALIZER_CLASS = Resume_Section_S
-
-#     def post(self,request,resume_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _s = self.SERIALIZER_CLASS(data=request.data)
-#         _s.is_valid(raise_exception=True)
-#         if not self.is_fk_owner_valid(_s,request.user):
-#             return Response(status=status.HTTP_403_FORBIDDEN)
-
-#         obj = _s.save(resume_fk=_resume,user_fk=request.user)
-#         obj.save()
-
-#         return Response(self.SERIALIZER_CLASS(obj).data)
-
-# class Resume_Section_Detail(APIView):
-#     def get_object_by_id(self,id:int,user,*,model_class):
-#         try:
-#             obj = model_class.objects.get(id=id)
-#         except model_class.DoesNotExist:
-#             return None,status.HTTP_404_NOT_FOUND 
-#         if obj.user_fk != user:
-#             return None,status.HTTP_403_FORBIDDEN
-
-#         return obj, status.HTTP_200_OK
-
-#     def delete(self,request,resume_id,section_id):
-#         _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
-#         if not _resume:
-#             return Response(status=_status)
-
-#         _section, _status = self.get_object_by_id(section_id,request.user,model_class=Resume_Content_Section_Positions)
-#         if not _section:
-#             return Response(status=_status)
-
-#         _section.delete()
-
-#         return Response({"msg":"Deleted"})
+
+class ResumeSubsectionsList(GenericList):
+    MODEL_CLASS = Resume_Subsections
+    SERIALIZER_CLASS = Resume_Subsections_S
+    allowed_filters = ['id','resume_fk','position__gt','position__lt']
+
+class ResumeSubsectionsDetail(GenericDetail):
+    MODEL_CLASS = Resume_Subsections
+    SERIALIZER_CLASS = Resume_Subsections_S
+
+
+
+class ResumeContactMapList(GenericList):
+    MODEL_CLASS = Contact_Resume_Map
+    SERIALIZER_CLASS = Contact_Resume_Map_S
+    allowed_filters = ['resume_fk','resume_subsection_fk']
+
+class ResumeContactMapDetail(GenericDetail):
+    MODEL_CLASS = Contact_Resume_Map
+    SERIALIZER_CLASS = Contact_Resume_Map_S
+
+
+class ResumeSkillMapList(GenericList):
+    MODEL_CLASS = Skill_Resume_Map
+    SERIALIZER_CLASS = Skill_Resume_Map_S
+    allowed_filters = ['resume_fk','resume_subsection_fk']
+
+class ResumeSkillMapDetail(GenericDetail):
+    MODEL_CLASS = Skill_Resume_Map
+    SERIALIZER_CLASS = Skill_Resume_Map_S
+
+
+class ResumeEducationMapList(GenericList):
+    MODEL_CLASS = Education_Resume_Map
+    SERIALIZER_CLASS = Education_Resume_Map_S
+    allowed_filters = ['resume_fk','resume_subsection_fk']
+
+class ResumeEducationMapDetail(GenericDetail):
+    MODEL_CLASS = Education_Resume_Map
+    SERIALIZER_CLASS = Education_Resume_Map_S
+
+
+class ResumeProjectMapList(GenericList):
+    MODEL_CLASS = Project_Resume_Map
+    SERIALIZER_CLASS = Project_Resume_Map_S
+    allowed_filters = ['resume_fk','resume_subsection_fk']
+
+class ResumeProjectMapDetail(GenericDetail):
+    MODEL_CLASS = Project_Resume_Map
+    SERIALIZER_CLASS = Project_Resume_Map_S
+
+
+class ResumeProjectSummaryMapList(GenericList):
+    MODEL_CLASS = Project_Summary_Resume_Map
+    SERIALIZER_CLASS = Project_Summary_Resume_Map_S
+    allowed_filters = ['resume_fk','resume_subsection_fk']
+
+class ResumeProjectSummaryMapDetail(GenericDetail):
+    MODEL_CLASS = Project_Summary_Resume_Map
+    SERIALIZER_CLASS = Project_Summary_Resume_Map_S

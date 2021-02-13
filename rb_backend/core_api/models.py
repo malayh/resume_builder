@@ -72,7 +72,11 @@ class Resume_Subsections(models.Model):
     title = models.TextField(null=True)
     position = models.IntegerField()
     class Meta:
-        unique_together = ('resume_fk', 'position',)
+        pass
+        # Removing this unique together contain, because there is limitation in DRF validator
+        # for unique fields, the client have to deal with it being unique.
+        # Keep the commented line below, as an remainder
+        # unique_together = ('resume_fk', 'position',)
 
 
 class Abstract_Entity_Resume_Map(models.Model):
@@ -80,9 +84,13 @@ class Abstract_Entity_Resume_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     resume_subsection_fk = models.ForeignKey(Resume_Subsections,on_delete=models.CASCADE)
     position = models.IntegerField()
+    template_prop = models.TextField(null=True)
     class Meta:
         abstract = True
-        unique_together = ('resume_subsection_fk', 'position',)
+        # Removing this unique together contain, because there is limitation in DRF validator
+        # for unique fields, the client have to deal with it being unique.
+        # Keep the commented line below, as an remainder
+        # unique_together = ('resume_subsection_fk', 'position',)
 
 class Contact_Resume_Map(Abstract_Entity_Resume_Map):
     contact_fk = models.ForeignKey(Contact_Details,on_delete=models.CASCADE)

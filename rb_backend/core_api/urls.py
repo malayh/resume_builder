@@ -26,8 +26,25 @@ urlpatterns = [
     path('coreapi/resumes/',ResumeList.as_view()),
     path('coreapi/resumes/<int:pk>/',ResumeDetail.as_view()),
 
-    # path('coreapi/resumes/<int:resume_id>/contacts/',Resume_CD_List.as_view()),
-    # path('coreapi/resumes/<int:resume_id>/contacts/<int:cd_id>/',Resume_CD_Detail.as_view()),
+    path('coreapi/resumes/subsecs/',ResumeSubsectionsList.as_view()),
+    path('coreapi/resumes/subsecs/<int:pk>/',ResumeSubsectionsDetail.as_view()),
+
+    path('coreapi/resumes/contacts/',ResumeContactMapList.as_view()),
+    path('coreapi/resumes/contacts/<int:pk>/',ResumeSubsectionsDetail.as_view()),
+
+    path('coreapi/resumes/skills/',ResumeSkillMapList.as_view()),
+    path('coreapi/resumes/skills/<int:pk>/',ResumeSkillMapDetail.as_view()),
+
+    path('coreapi/resumes/edus/',ResumeEducationMapList.as_view()),
+    path('coreapi/resumes/edus/<int:pk>/',ResumeEducationMapDetail.as_view()),
+
+    path('coreapi/resumes/projects/',ResumeProjectMapList.as_view()),
+    path('coreapi/resumes/projects/<int:pk>/',ResumeProjectMapDetail.as_view()),
+
+    path('coreapi/resumes/projectsummaries/',ResumeProjectSummaryMapList.as_view()),
+    path('coreapi/resumes/projectsummaries/<int:pk>/',ResumeProjectSummaryMapDetail.as_view()),
+
+
 
     # path('coreapi/resumes/<int:resume_id>/skills/',Resume_Skill_List.as_view()),
     # path('coreapi/resumes/<int:resume_id>/skills/<int:s_id>/',Resume_Skill_Detail.as_view()),
