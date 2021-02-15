@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navbar,Nav,NavDropdown,Form,FormControl,Button} from 'react-bootstrap'
+import { Navbar,NavDropdown} from 'react-bootstrap'
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './main.css';
@@ -9,17 +9,13 @@ import ResumePage from './resumes/ResumePage';
 import HistoryPage from './add-history/HistoryPage';
 import storageAvailable from './util'
 
-import {Link, BrowserRouter as Router,Route, Switch, Redirect, useHistory} from 'react-router-dom';
+import {Link, BrowserRouter as Router,Route, Switch, Redirect} from 'react-router-dom';
 
 class Navigation extends React.Component {
-    constructor(props){
-        // @props: active_nav should be one of ('history','resumes')
-        // @props: onLogout : function: to be called when logout is clicked.
-        // @props: historyPath : path to history page
-        // @props: resumesPath : path to resumes page
-
-        super(props);
-    }
+    // @props: active_nav should be one of ('history','resumes')
+    // @props: onLogout : function: to be called when logout is clicked.
+    // @props: historyPath : path to history page
+    // @props: resumesPath : path to resumes page
     render(){
         const nav = (
             <Navbar id="main-nav" collapseOnSelect expand="lg" bg="dark" variant="dark">

@@ -1,6 +1,83 @@
-import React from 'react';
-
 import {configs} from '../Config';
+
+Object.unflatten = function(data) {
+    "use strict";
+    if (Object(data) !== data || Array.isArray(data))
+        return data;
+    var regex = /\.?([^.\[\]]+)|\[(\d+)\]/g,
+        resultholder = {};
+    for (var p in data) {
+        var cur = resultholder,
+            prop = "",
+            m;
+        while (m = regex.exec(p)) {
+            cur = cur[prop] || (cur[prop] = (m[2] ? [] : {}));
+            prop = m[2] || m[1];
+        }
+        cur[prop] = data[p];
+    }
+    return resultholder[""] || resultholder;
+};
+Object.flatten = function(data) {
+    var result = {};
+    function recurse (cur, prop) {
+        if (Object(cur) !== cur) {
+            result[prop] = cur;
+        } else if (Array.isArray(cur)) {
+             for(var i=0, l=cur.length; i<l; i++)
+                 recurse(cur[i], prop + "[" + i + "]");
+            if (l == 0)
+                result[prop] = [];
+        } else {
+            var isEmpty = true;
+            for (var p in cur) {
+                isEmpty = false;
+                recurse(cur[p], prop ? prop+"."+p : p);
+            }
+            if (isEmpty && prop)
+                result[prop] = {};
+        }
+    }
+    recurse(data, "");
+    return result;
+}
+
+class GlobalCache{
+    constructor(){
+        this.storage = {};
+
+        this.insert = this.insert.bind(this);
+        this.get = this.get.bind(this);
+        this.remove = this.remove.bind(this);
+        this.clear = this.clear.bind(this);
+    }
+    insert(key,obj){
+        this.storage[key] = Object.flatten(obj);
+    }
+    get(key){
+        if(! key in this.storage){
+            return null;
+        }
+        
+        return Object.unflatten(this.storage[key]);
+    }
+    remove(key){
+        if(key in this.storage)
+            delete this.storage[key];
+    }   
+    clear(){
+        for(var key in Object.keys(this.storage)){
+            delete this.storage[key];
+        }
+    }
+    isPresent(key){
+        return key in this.storage;
+    }
+    
+}
+
+export var globalCache = new GlobalCache();
+
 
 export class DBEndpoint{
     constructor(apiUrl){
@@ -20,6 +97,7 @@ export class DBEndpoint{
         for(var key of Object.keys(filter)){
             this.filter[key] = filter[key]
         }
+        return this;
     }
     
     async createOne(dbObj){

@@ -13,7 +13,7 @@ import {
 import {SectionBody} from '../common/Section';
 import {DBEndpoint} from '../common/DB';
 
-import {delete_icon,add_icon,edit_icon,done_icon} from '../common/Icons';
+import {delete_icon,edit_icon,done_icon} from '../common/Icons';
 
 import {configs} from '../Config';
 
@@ -46,7 +46,6 @@ class SkillSection extends React.Component{
                     new_skills[i['id']] = {name: i['name'], score: i['score']};
                 }
                 this.setState({skills:new_skills});
-
             });
     }
     
@@ -453,6 +452,7 @@ class ExperienceSection extends React.Component{
         );
         return main;
     }
+
 }
 
 
@@ -1339,6 +1339,8 @@ export default class HistoryPage extends React.Component {
 
     componentDidMount(){
         this.props.onNav('history');
+        // globalCache.insert("hp","Hptesting");
+        // console.log(globalCache);
     }
 
     render(){

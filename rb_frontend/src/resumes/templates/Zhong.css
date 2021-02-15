@@ -16,6 +16,9 @@
     font-weight: bold;
 }
 
+.resume-sub-section .add-button{
+    cursor: pointer;
+}
 
 #sidebar-section{
     padding-top: 1em;

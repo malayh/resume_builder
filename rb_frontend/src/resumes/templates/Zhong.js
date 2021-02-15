@@ -4,6 +4,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './resume_base.css';
 import './Zhong.css';
 
+import {DBEndpoint} from '../../common/DB';
+import {add_icon} from '../../common/Icons'
 var icons = {
     mail_icon : (
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-envelope-fill" viewBox="0 0 16 16">
@@ -31,7 +33,7 @@ var icons = {
     )
 }
 
-export default class TemplateZhong extends React.Component {
+export class TemplateZhong extends React.Component {
     // Why named Zhong? Becauce copied from https://mnjul.net/cv/resume.pdf
     render(){
         var main = (
@@ -162,6 +164,145 @@ export default class TemplateZhong extends React.Component {
                 </div>
             </div>
         );
+        return main;
+    }
+}
+
+
+class MainSubsection extends React.Component {
+    constructor(props){
+        super(props);
+        this.state = {
+            id : props.id,
+            resume_fk : props.resume_fk,
+            title : props.title,
+            position : props.position
+        }
+    }
+
+    render(){
+        return (
+            <div className="resume-sub-section">
+                {this.state.title && <div className="heading">{this.state.title}</div>}
+                <div className="labelled-desc">
+                {add_icon}
+                </div>
+            </div>
+        );
+    }
+}
+
+class SidebarSubsection extends React.Component {
+    render(){
+        return (
+            <div className="resume-sub-section">
+                Sidebar
+            </div>
+        )
+    }
+}
+export class Composer extends React.Component{
+    // @prop : resume : resume object : {id , title, job_profile_fk, profile_summary_fk }
+    constructor(props){
+        super(props);
+        this.state = {
+            resume: this.props.resume,
+            user_name : null,
+            profile : null,
+            summary: null,
+            sidebar_subsec : [],
+            main_subsec : []
+        }
+        this.max_main_subsec_pos = 1;
+        this.max_sidebar_subsec = 101;
+
+        this.dbSubSec = new DBEndpoint('coreapi/resumes/subsecs/');
+    }
+
+    componentDidMount(){
+        new DBEndpoint('users/').readAll()
+        .then(data => {
+            this.setState({user_name:data['name']});
+        });
+
+
+        if(this.state.resume.job_profile_fk !== null){
+            new DBEndpoint('coreapi/jobprofiles/').readOne(this.state.resume.job_profile_fk)
+            .then(data => {
+                this.setState({profile: data['profile']});
+            });
+        }
+        
+
+
+        if(this.state.resume.profile_summary_fk !== null){
+            new DBEndpoint('coreapi/summaries/').readOne(this.state.resume.profile_summary_fk)
+            .then(data =>{
+                this.setState({summary: data['summary']});
+            });
+        }
+        
+
+        this.dbSubSec.addFilter({resume_fk:this.state.resume.id}).readAll()
+        .then(data => {
+            data.sort((a,b) => (a.position > b.position ? 1 : -1));
+            let _main_subsec = [];
+            let _side_subsec = [];
+            for(let i of data){
+                if(i['position'] < 100){
+                    _main_subsec.push(i);
+                    if(i['position'] > this.max_main_subsec_pos)
+                        this.max_main_subsec_pos = i['position'];
+                }
+                else {
+                    _side_subsec.push(i);
+                    if(i['position'] > this.max_sidebar_subsec)
+                        this.max_sidebar_subsec = i['postition'];
+                }
+            }
+
+            this.setState({sidebar_subsec: _side_subsec});
+            this.setState({main_subsec : _main_subsec});
+        });
+
+    }
+
+    render(){
+        var main = (
+            <div className="resume-body">
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-lg-8 nopadding" id="main-content-section">
+                            <div className="resume-sub-section">
+                                <div className="user-name">{this.state.user_name}</div>
+                                {this.state.profile && <div className="user-profile">{this.state.profile}</div>}
+                                {this.state.summary && <div className="profile-summary">{this.state.summary}</div>}
+                            </div>
+                            {
+                                this.state.main_subsec.map(subsec =>{
+                                    return <MainSubsection key={subsec.id} {...subsec} />
+                                })
+                            }
+                            <div className="resume-sub-section">
+                                <span className="add-button">{add_icon}</span>
+                            </div>
+                            
+                        </div>
+                        <div className="col-lg-4 nopadding" id="sidebar-section">
+                            {
+                                this.state.sidebar_subsec.map(subsec =>{
+                                    return <SidebarSubsection key={subsec.id} {...subsec} />
+                                })
+                            }
+                            <div className="resume-sub-section">
+                                <span className="add-button">{add_icon}</span> 
+                            </div>                       
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
         return main;
     }
 }
