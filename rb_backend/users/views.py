@@ -67,7 +67,6 @@ class UserInfo(APIView):
             'email' : request.user.u_email,
             'name': request.user.u_name
         }
-        print(type(request.user))
         return Response(_d)
 
     def put(self,request):

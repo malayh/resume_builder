@@ -70,7 +70,7 @@ class GenericList(APIView):
         if hasattr(self.SERIALIZER_CLASS.Meta,'fks'):
             assert isinstance(self.SERIALIZER_CLASS.Meta.fks,list)
             for fk in self.SERIALIZER_CLASS.Meta.fks:
-                if fk in _s.validated_data and _s.validated_data[fk].user_fk != request.user:
+                if fk in _s.validated_data and _s.validated_data[fk] and _s.validated_data[fk].user_fk != request.user:
                     return Response(status=status.HTTP_403_FORBIDDEN)
 
 
@@ -129,7 +129,7 @@ class GenericDetail(APIView):
         if hasattr(self.SERIALIZER_CLASS.Meta,'fks'):
             assert isinstance(self.SERIALIZER_CLASS.Meta.fks,list)
             for fk in self.SERIALIZER_CLASS.Meta.fks:
-                if fk in _s.validated_data and _s.validated_data[fk].user_fk != request.user:
+                if fk in _s.validated_data and _s.validated_data[fk] and _s.validated_data[fk].user_fk != request.user:
                     return Response(status=status.HTTP_403_FORBIDDEN)
 
         for field,value in _s.validated_data.items():
