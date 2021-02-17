@@ -84,6 +84,7 @@ class Abstract_Entity_Resume_Map(models.Model):
     resume_fk = models.ForeignKey(Resumes,on_delete=models.CASCADE)
     resume_subsection_fk = models.ForeignKey(Resume_Subsections,on_delete=models.CASCADE)
     position = models.IntegerField()
+    # Template prop will be interpeted by the template, based on type of mapping and its value
     template_prop = models.TextField(null=True)
     class Meta:
         abstract = True

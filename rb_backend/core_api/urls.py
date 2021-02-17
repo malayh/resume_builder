@@ -30,7 +30,7 @@ urlpatterns = [
     path('coreapi/resumes/subsecs/<int:pk>/',ResumeSubsectionsDetail.as_view()),
 
     path('coreapi/resumes/contacts/',ResumeContactMapList.as_view()),
-    path('coreapi/resumes/contacts/<int:pk>/',ResumeSubsectionsDetail.as_view()),
+    path('coreapi/resumes/contacts/<int:pk>/',ResumeContactMapDetail.as_view()),
 
     path('coreapi/resumes/skills/',ResumeSkillMapList.as_view()),
     path('coreapi/resumes/skills/<int:pk>/',ResumeSkillMapDetail.as_view()),
