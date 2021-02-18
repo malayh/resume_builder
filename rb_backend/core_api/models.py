@@ -108,6 +108,9 @@ class Project_Resume_Map(Abstract_Entity_Resume_Map):
 class Project_Summary_Resume_Map(Abstract_Entity_Resume_Map):
     project_summary_fk = models.ForeignKey(Projects_Summaries,on_delete=models.CASCADE)
 
+class Experiece_Resume_Map(Abstract_Entity_Resume_Map):
+    job_profile_fk = models.ForeignKey(Job_Profiles,on_delete=models.CASCADE)
+
        
 
 
