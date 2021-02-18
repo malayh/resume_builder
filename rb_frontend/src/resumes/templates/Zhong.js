@@ -6,7 +6,7 @@ import './Zhong.css';
 
 import {DBEndpoint} from '../../common/DB';
 import {add_icon,edit_icon,delete_icon,done_icon, downarrow} from '../../common/Icons'
-import { map } from 'jquery';
+import { map, timers } from 'jquery';
 
 var icons = {
     mail_icon : (
@@ -41,7 +41,7 @@ var icons = {
     )
 }
 
-var icon_map = {
+let icon_map = {
     mail_icon   : icons.mail_icon,
     glob_icon   : icons.glob_icon,
     linkdin_icon: icons.linkdin,
@@ -196,11 +196,16 @@ class HoverDropdown extends React.Component {
 
     render(){
         return (
-            <div className="dropdown" 
+            <div className="dropdown"
+        
             onMouseLeave={()=>{
                 this.menuRef.current.style.display='none';
             }}
             
+            onClick={()=>{
+                // this.menuRef.current.style.display='block'; 
+                // this.menuRef.current.style.margin=0
+            }}
             onMouseEnter={()=>{
                 this.menuRef.current.style.display='block'; 
                 this.menuRef.current.style.margin=0
@@ -229,7 +234,27 @@ class HoverDropdown extends React.Component {
 
 }
 
+class SummaryMappableMapping extends React.Component {
+    render(){
+        return (
+            <>
+            <div className="maping-editor">
+                <div className="labelled-info" style={{display:"flex"}}>
+                    <div className="label-ld">{this.props.title}</div>
+                    <div className="dropdowns">
+                        <HoverDropdown name={add_icon} heading="Select project summary">
+                        </HoverDropdown>
+                    </div>
+                </div>
+                <span className="button" onClick={()=>this.props.onDelete(this.props.id)}>{delete_icon}</span>
+            </div>
+            </>
+        );
+    }
+}
+
 class MainSubsection extends React.Component {
+    //@props: xp_opts: id : { id : 1, profile:"Software Engineer", company: "subex", location: "", start_time:, end_time: is_current:}
     constructor(props){
         super(props);
         this.state = {
@@ -237,40 +262,62 @@ class MainSubsection extends React.Component {
             resume_fk : props.resume_fk,
             title : props.title,
             position : props.position,
-            
-            project_opt : [
-                {id: 1, title:"Project 1"},
-                {id: 2, title:"Project 2"}
+
+            xp_mapping : [
+                // {id: 1, position: 1, template_prop:null, skill_fk: 53, name: "Python", score:""}
             ],
-            xp_opts : [
-                {id: 1, profile: "Software Engineer"},
-                {id: 2, profile: "Full Stack Developer"},
+
+            project_mapping : [
+                // {id: 1, position: 1, template_prop:null, project_fk: 53, title: "Some name"}
             ],
-            edu_ops : [
-                {id: 1, degree:"B Tech"}
-            ]
+
         }
 
         this.dispRef = React.createRef();
         this.formRef = React.createRef();
-
+        
         this.onEdit = this.onEdit.bind(this);
         this.onSave = this.onSave.bind(this);
-
+        
         this.prevState = null;
-
-        this.onDDSelect = this.onDDSelect.bind(this);
+        
+        this.max_project_map_pos = 1;
+        this.dbProjectMap = new DBEndpoint('coreapi/resumes/projects/');
+        this.onAddProjectMap = this.onAddProjectMap.bind(this);
+        this.onDeleteProjectMap = this.onDeleteProjectMap.bind(this);
     }
 
+    async loadMappings(){
+        let data = await this.dbProjectMap.addFilter({resume_subsection_fk:this.state.id}).readAll();
+        data.sort((a,b) => (a.position > b.position ? 1 : -1));
+        let _pm = [];
+        for(let i of data){
+            i['title'] = this.props.project_opts[i['project_fk']]['title'];
+            _pm.push(i);
+            if(i['position'] > this.max_project_map_pos)
+                this.max_project_map_pos = i['position'];
+        }
+
+        this.setState({project_mapping:_pm});
+        
+    }
     componentDidMount(){
         this.formRef.current.style.display='None'; 
         this.dispRef.current.style.display='';
+        this.loadMappings();
     }
+
     onEdit(){
         this.dispRef.current.style.display='None';
         this.formRef.current.style.display='';
-        this.prevState = Object.assign({},this.state);        
+        this.prevState = {
+            id : this.state.id,
+            resume_fk : this.state.resume_fk,
+            title : this.state.title,
+            position : this.state.position
+        };       
     }
+
     onSave(){
         this.formRef.current.style.display='None'; 
         this.dispRef.current.style.display='';
@@ -278,23 +325,76 @@ class MainSubsection extends React.Component {
         for(var key in this.prevState){
             if(this.state[key] !== this.prevState[key]){
                 this.prevState = null;
-                // this.props.onChange(this.state)
+                this.props.onChange({
+                    id : this.state.id,
+                    resume_fk : this.state.resume_fk,
+                    title : this.state.title,
+                    position : this.state.position
+                });
                 break;
             }
         }
 
     }
-    onDDSelect(eventKey){
-        console.log(eventKey);
+
+    onAddProjectMap(project_fk){
+        let new_map = { 
+            project_fk : project_fk, 
+            resume_fk : this.state.resume_fk, 
+            resume_subsection_fk : this.state.id,
+            position : this.max_project_map_pos+1
+        };
+        this.dbProjectMap.createOne(new_map)
+        .then(data => {
+            data['title'] = this.props.project_opts[project_fk]['title'];
+            let _pm = Object.assign([],this.state.project_mapping);
+            _pm.push(data);
+            this.setState({project_mapping:_pm});
+            this.max_project_map_pos++;            
+        });
+    }
+    onDeleteProjectMap(map_id){
+        let _pm = Object.assign([],this.state.project_mapping);
+        let index = -1;
+        for(let i=0 ; i < _pm.length ; i++){
+            if(_pm[i].id === map_id){
+                index = i;
+                break;
+            }
+        }
+        if(index < 0)
+            return;
+
+        _pm.splice(index,1);
+
+        this.dbProjectMap.deleteOne(map_id)
+        .then(()=>{
+            this.setState({project_mapping:_pm});            
+        });
     }
 
     render(){
         var main = (
             <div className="resume-sub-section" ref={this.dispRef}>
                 <div className="heading-edit">
-                    {this.state.title && <div className="heading">{this.state.title}</div> }
-                    <span className="button" onClick={this.onEdit}>{edit_icon}</span>
+                    <span style={{display:"flex"}}>
+                        {this.state.title && <div className="heading">{this.state.title}</div> }
+                        <span className="button" onClick={this.onEdit}>{edit_icon}</span>
+                    </span>
+                    <span className="button" onClick={()=>{this.props.onDelete(this.state.id)}}>{delete_icon}</span>
                 </div>
+
+                {
+                    this.state.project_mapping.map(val=>{
+                        return(
+                            <div className="labelled-desc">
+                                <div className="label-ld">{val.title}</div>
+                            </div>
+                        );
+
+                    })
+                }
+
             </div>
         );
         var form = (
@@ -305,27 +405,36 @@ class MainSubsection extends React.Component {
                         onChange={(val)=>this.setState({title:val.target.value})}/>
                     <span className="button" onClick={this.onSave}>{done_icon}</span>
                 </div>
+
+                <div>
+                {
+                    // Project map edit
+                    this.state.project_mapping.map(val =>{
+                        return (
+                            <SummaryMappableMapping
+                                key={val.id}
+                                id={val.id}
+                                title={val.title}
+                                onDelete={this.onDeleteProjectMap}/>
+                        );
+                    })
+                }
+                </div>
+
                 <div className="heading-edit">
                     <div className="dropdowns">
-                        <HoverDropdown name={add_icon}>
-                            <HoverDropdown name="Projects" onSelect={this.onDDSelect}>
+                        <HoverDropdown name={add_icon} heading="Select Mapping">
+                            <HoverDropdown name="Experiences">
                             {
-                                this.state.project_opt.map(val=>{
-                                    return <span key={val.id} eventKey={val.id}>{val.title}</span>
+                                Object.keys(this.props.xp_opts).map(key=>{
+                                    return <span key={key} eventKey={key}>{this.props.xp_opts[key]['profile']}</span>
                                 })
                             }
                             </HoverDropdown>
-                            <HoverDropdown name="Experiences" onSelect={this.onDDSelect}>
+                            <HoverDropdown name="Projects" onSelect={this.onAddProjectMap}>
                             {
-                                this.state.xp_opts.map(val=>{
-                                    return <span key={val.id} eventKey={val.id}>{val.profile}</span>
-                                })
-                            }
-                            </HoverDropdown>
-                            <HoverDropdown name="Educations" onSelect={this.onDDSelect}>
-                            {
-                                this.state.edu_ops.map(val=>{
-                                    return <span key={val.id} eventKey={val.id}>{val.degree}</span>
+                                Object.keys(this.props.project_opts).map(key=>{
+                                    return <span key={key} eventKey={key}>{this.props.project_opts[key]['title']}</span>
                                 })
                             }
                             </HoverDropdown>
@@ -334,6 +443,8 @@ class MainSubsection extends React.Component {
                 </div>
 
             </div>
+
+            
         );
 
         return <>{main}{form}</>;
@@ -341,6 +452,7 @@ class MainSubsection extends React.Component {
 }
 
 class ContactMapping extends React.Component {
+    // For this template template_prop is a a string, which can be null or a key to the icon_map object
     //@props: onDelete : callback when delete is clicked.: Param: contact mapping id
     //@props: onUpdate : callback when template_prop is updated: Param: contact mapping id, template_prop
     constructor(props){
@@ -366,7 +478,7 @@ class ContactMapping extends React.Component {
     }
     render(){
         return (
-            <div className="contact-map-editor">
+            <div className="maping-editor">
                 <div className="labelled-info">
                     <div className="label-ld" style={{display:"flex"}}>
                         <HoverDropdown name={this.state.current_label} heading="Choose a label" onSelect={this.onIconSelect}>
@@ -386,11 +498,27 @@ class ContactMapping extends React.Component {
     }
 }
 
+class SkillMapping extends React.Component {
+    //@props: name
+    //@props: id
+    //@props: onDelete : callback for delete : Param : mapping id
+
+    render(){
+        return (
+        <div className="maping-editor">
+            <div>{this.props.name}</div>
+            <span className="button" onClick={()=>this.props.onDelete(this.props.id)}>{delete_icon}</span>
+        </div>
+        );
+    }
+}
 
 class SidebarSubsection extends React.Component {
     //@props onDelete: callback when sidebar subsection is deleted
     //@props onChange: callback when sidebar subsection is changed
     //@props contact_opts : obj of contacts : { id: {id : 1, label: "Phone", value: "1245" } }
+    //@props skill_opts : obj of skills : { id: {id : 1, name: "C++", value: "75" } }
+
 
     constructor(props){
         super(props);
@@ -401,15 +529,10 @@ class SidebarSubsection extends React.Component {
             position : props.position,
 
             skill_mappings : [
-
+                // {id: 1, position: 1, template_prop:null, skill_fk: 53, name: "Python", score:""}
             ],
             contact_mappings : [
                 // {id: 1, position: 1, template_prop:null, contact_fk: 17, lable: "Lable", value:""}
-            ],
-
-            skills_opts : [
-                {id: 1, name :"Python"},
-                {id: 2, name :"C++"},
             ],
         }
 
@@ -427,6 +550,13 @@ class SidebarSubsection extends React.Component {
         this.onContactMapAdd = this.onContactMapAdd.bind(this);
         this.onContactMapDel = this.onContactMapDel.bind(this);
         this.onContactMapUpdate = this.onContactMapUpdate.bind(this);
+
+
+        this.max_skill_pos = 1;
+        this.dbSkillMap = new DBEndpoint('coreapi/resumes/skills/');
+        this.onSkillMapAdd = this.onSkillMapAdd.bind(this);
+        this.onSkillMapDelete = this.onSkillMapDelete.bind(this);
+
     }
 
     async loadMappings(){
@@ -442,7 +572,19 @@ class SidebarSubsection extends React.Component {
         }
 
         this.setState({contact_mappings:_cm});
-        
+
+        data = await this.dbSkillMap.addFilter({resume_subsection_fk:this.state.id}).readAll()
+        data.sort((a,b) => (a.position > b.position ? 1 : -1));
+        let _sm = [];
+        for(let i of data){
+            i['name'] = this.props.skill_opts[i['skill_fk']]['name'];
+            i['score'] = this.props.skill_opts[i['skill_fk']]['score'];
+            _sm.push(i);
+            if(i['position'] > this.max_skill_pos)
+                this.max_skill_pos = i['position'];
+        }
+
+        this.setState({skill_mappings:_sm});
     }
 
     componentDidMount(){
@@ -535,6 +677,47 @@ class SidebarSubsection extends React.Component {
             this.setState({contact_mappings:_cm});
         });
     }
+
+    onSkillMapAdd(skill_fk){
+        let new_map = { 
+            skill_fk : skill_fk, 
+            resume_fk : this.state.resume_fk, 
+            resume_subsection_fk : this.state.id,
+            position : this.max_skill_pos+1
+        };
+        this.dbSkillMap.createOne(new_map)
+        .then(data=>{
+            data['name'] = this.props.skill_opts[skill_fk]['name'];
+            data['score'] = this.props.skill_opts[skill_fk]['score'];
+
+            let _sm = Object.assign([],this.state.skill_mappings);
+            _sm.push(data);
+            this.setState({skill_mappings:_sm});
+            this.max_skill_pos++;
+        });
+    }
+
+    onSkillMapDelete(map_id){
+        let _sm = Object.assign([],this.state.skill_mappings);
+        let index = -1;
+        for(let i=0 ; i < _sm.length ; i++){
+            if(_sm[i].id === map_id){
+                index = i;
+                break;
+            }
+        }
+        if(index < 0)
+            return;
+
+        _sm.splice(index,1);
+
+        this.dbSkillMap.deleteOne(map_id)
+        .then(()=>{
+            this.setState({skill_mappings:_sm});            
+        });
+    }
+
+
     render(){
         var main = (
             <div className="resume-sub-section" ref={this.dispRef}>
@@ -545,9 +728,11 @@ class SidebarSubsection extends React.Component {
                     </span>
                     <span className="button" onClick={()=>{this.props.onDelete(this.state.id)}}>{delete_icon}</span>
                 </div>
+                
                 {
+                    // Contact mapping display
                     this.state.contact_mappings.map(i =>{
-                        let label = i.template_prop === null ? i.label : icon_map[i.template_prop];
+                        let label = i.template_prop === null || !icon_map[i.template_prop] ? i.label : icon_map[i.template_prop];
                         return (
                             <div className="labelled-info">
                                 <div className="label-ld">{label}</div>
@@ -556,6 +741,17 @@ class SidebarSubsection extends React.Component {
                         );
                     })
                 }
+                {
+                    this.state.skill_mappings.length > 0 && <div className="skill-section">
+                    {
+                        this.state.skill_mappings.map( i => {
+                            return <div className="skill-item">{i['name']}</div>
+                        })
+                    }
+                    </div>
+                }
+
+
             </div>
         );
         var form = (
@@ -584,13 +780,34 @@ class SidebarSubsection extends React.Component {
                 }
                 </div>
 
+                <div>
+                {
+                    this.state.skill_mappings.map(val =>{
+                        return (
+                            <SkillMapping 
+                                key={val.id} 
+                                id={val.id} 
+                                name={val.name}
+                                onDelete={this.onSkillMapDelete}/>
+                        );
+                    })
+                }   
+                </div>
+
                 <div className="heading-edit">
                     <div className="dropdowns">
-                        <HoverDropdown name={add_icon}>
+                        <HoverDropdown name={add_icon} heading="Select Mapping">
                             <HoverDropdown name="Contacts" onSelect={this.onContactMapAdd}>
                             {
                                 Object.keys(this.props.contact_opts).map(key=>{
                                     return <span key={key} eventKey={key}>{this.props.contact_opts[key]['label']}</span>
+                                })
+                            }
+                            </HoverDropdown>
+                            <HoverDropdown name="Skill" onSelect={this.onSkillMapAdd}>
+                            {
+                                Object.keys(this.props.skill_opts).map(key=>{
+                                    return <span key={key} eventKey={key}>{this.props.skill_opts[key]['name']}</span>
                                 })
                             }
                             </HoverDropdown>
@@ -605,7 +822,8 @@ class SidebarSubsection extends React.Component {
     }
 }
 
-export class Composer extends React.Component{
+export class Composer extends React.Component {
+    // TODO: Refector the add, delete, update to not repeat
     // @prop : resume : resume object : {id , title, job_profile_fk, profile_summary_fk }
     constructor(props){
         super(props);
@@ -615,14 +833,25 @@ export class Composer extends React.Component{
             profile : null,
             summary: null,
             sidebar_subsec : [
-                // {"id": 8, "resume_fk": 22, "title": "Project", "position": 1},
+                // {"id": 8, "resume_fk": 22, "title": "Portfolio", "position": 101},
             ],
 
             main_subsec : [
+                // {"id": 8, "resume_fk": 22, "title": "Projects", "position": 1},
             ],
+
 
             contacts : {
                 // id: {id : 1, label: "Phone", value: "1245" }
+            },
+            skills : {
+                // id : { id: 1, name: "Python", score: 95}
+            },
+            xp : {
+                // id : { id : 1, profile:"Software Engineer", company: "subex", location: "", start_time:, end_time: is_current:}
+            },
+            projects : {
+                // id : { id : 1, title:"Lorem Ipsum"}
             }
             
         }
@@ -635,13 +864,13 @@ export class Composer extends React.Component{
         this.addSidebarSection = this.addSidebarSection.bind(this);
         this.onDeleteSidebar = this.onDeleteSidebar.bind(this);
         this.onUpdateSidebar = this.onUpdateSidebar.bind(this);
+
+        this.onAddMainSections = this.onAddMainSections.bind(this);
+        this.onDeleteMainSection = this.onDeleteMainSection.bind(this);
+        this.onUpdateMainSection = this.onUpdateMainSection.bind(this);
     }
 
     onDeleteSidebar(id){
-        // The logic of positions is that, subsection with position > 100 is considered to be a part of the side bar
-        // So positions on the main subsection must be < 100. So if we delete and add new subsections continously
-        // The positions will become fragmented and can cross 100. So for main content section the subsection positions has
-        // to be defragmented.
 
         let _ss = Object.assign([],this.state.sidebar_subsec);
         let index = -1;
@@ -686,12 +915,122 @@ export class Composer extends React.Component{
         
     }
 
+    addSidebarSection(){
+        let new_ss = {"resume_fk": this.state.resume.id, "title": "Subsection", "position": this.max_sidebar_subsec_pos+1};
+        this.dbSubSec.createOne(new_ss)
+        .then(data=>{
+            let _ss = Object.assign([],this.state.sidebar_subsec);
+            _ss.push(data);
+            this.setState({sidebar_subsec:_ss});
+            this.max_sidebar_subsec_pos++;
+        });                
+        
+    }
+
+    onAddMainSections(){
+        // TODO: Add the following check
+
+        // Mai section can have at most 100 subsections. Because subsection with position > 100 will become part of sidebar.
+        // So adding and deleting continuously may increase the next usable position to be > 100. In that case we have to
+        // alter positions of each subsection to be continuos so that we can use positions that were deleted and was never used.
+        // So cheack if next avaiable positions > 100 and if number of subsections in main section < 100 then defragment 
+        // the positions to make the continous. Then again check
+
+        // TODO: Returning now. But need to run defragment before returning
+        if(this.max_main_subsec_pos+1 > 99)
+            return;
+
+        let new_ss = {"resume_fk": this.state.resume.id, "title": "Subsection", "position": this.max_main_subsec_pos+1};
+        this.dbSubSec.createOne(new_ss)
+        .then(data=>{
+            let _ss = Object.assign([],this.state.main_subsec);
+            _ss.push(data);
+            this.setState({main_subsec:_ss});
+            this.max_main_subsec_pos++;
+        });
+
+    }
+
+    onDeleteMainSection(id){
+        let _ms = Object.assign([],this.state.main_subsec);
+        let index = -1;
+        for(let i=0 ; i < _ms.length ; i++){
+            if(_ms[i].id === id){
+                index = i;
+                break;
+            }
+        }
+        if(index >= 0){
+            _ms.splice(index,1);
+        }
+        
+        this.dbSubSec.deleteOne(id)
+        .then(()=>{
+            this.setState({main_subsec:_ms});            
+        })
+    }
+
+    onUpdateMainSection(obj){
+        let _ms = Object.assign([],this.state.main_subsec);
+        let index = -1;
+        for(let i=0 ; i < _ms.length ; i++){
+            if(_ms[i].id === obj.id){
+                index = i;
+                break;
+            }
+        }
+        if(index < 0)
+            return;
+        
+        for(let key in obj){
+            _ms[index][key] = obj[key];
+        }
+        
+
+        this.dbSubSec.updateOne(obj['id'],obj)
+        .then(()=>{
+            this.setState({main_subsec:_ms})
+        });
+    }
+
     defragmentPositions(){
 
     }
 
     async loadSubsectionMenuData(){
-        let data = await this.dbSubSec.addFilter({resume_fk:this.state.resume.id}).readAll()
+
+        let _contacts = {};
+        let data = await new DBEndpoint('coreapi/contacts/').readAll()
+        for(let i of data)
+            _contacts[i.id] = i;
+
+        this.setState({contacts:_contacts});
+
+        let _skills = {};
+        data = await new DBEndpoint('coreapi/skills/').readAll();
+        for(let i of data)
+            _skills[i.id] = i;
+            
+        this.setState({skills:_skills});
+
+        let _xp = {}
+        data = await new DBEndpoint('coreapi/jobprofiles/').readAll();
+        for(let i of data)
+            _xp[i.id] = i;
+
+        this.setState({xp:_xp});
+
+        let _prj = {}
+        data = await new DBEndpoint('coreapi/projects/').readAll();
+        for(let i of data){
+            _prj[i.id] = {id : i.id, title: i.title }
+        }
+
+        this.setState({projects:_prj});
+
+
+
+        data = await this.dbSubSec.addFilter({resume_fk:this.state.resume.id}).readAll()
         data.sort((a,b) => (a.position > b.position ? 1 : -1));
         let _main_subsec = [];
         let _side_subsec = [];
@@ -708,13 +1047,7 @@ export class Composer extends React.Component{
             }
         }
 
-        let _contacts = {};
-        data = await new DBEndpoint('coreapi/contacts/').readAll()
-        for(let i of data)
-            _contacts[i.id] = i;
-
-
-        this.setState({contacts:_contacts});
+        
         this.setState({sidebar_subsec: _side_subsec});
         this.setState({main_subsec : _main_subsec});
 
@@ -744,22 +1077,9 @@ export class Composer extends React.Component{
         }
         
         this.loadSubsectionMenuData();
-
     }
 
-    addSidebarSection(){
-        let new_ss = {"resume_fk": this.state.resume.id, "title": "Subsection", "position": this.max_sidebar_subsec_pos+1};
-        this.dbSubSec.createOne(new_ss)
-        .then(data=>{
-            let _ss = Object.assign([],this.state.sidebar_subsec);
-            _ss.push(data);
-            this.setState({sidebar_subsec:_ss});
-            this.max_sidebar_subsec_pos++;
-        })
-
-                
-        
-    }
+    
 
     render(){
         var main = (
@@ -774,11 +1094,20 @@ export class Composer extends React.Component{
                             </div>
                             {
                                 this.state.main_subsec.map(subsec =>{
-                                    return <MainSubsection key={subsec.id} {...subsec} />
+                                    return (
+                                        <MainSubsection 
+                                            key={subsec.id} 
+                                            {...subsec}
+                                            onDelete={this.onDeleteMainSection}
+                                            onChange={this.onUpdateMainSection}
+                                            xp_opts={this.state.xp}
+                                            project_opts={this.state.projects}
+                                        />)
+                                    ;
                                 })
                             }
                             <div className="resume-sub-section">
-                                <span className="add-button">
+                                <span className="add-button" onClick={this.onAddMainSections}>
                                         <span>{add_icon}</span>
                                 </span>                                             
                             </div>
@@ -794,6 +1123,7 @@ export class Composer extends React.Component{
                                             onDelete={this.onDeleteSidebar} 
                                             onChange={this.onUpdateSidebar}
                                             contact_opts={this.state.contacts}
+                                            skill_opts={this.state.skills}
                                         />
                                     );
                                 })
