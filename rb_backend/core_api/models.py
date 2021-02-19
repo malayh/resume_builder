@@ -89,7 +89,7 @@ class Abstract_Entity_Resume_Map(models.Model):
     class Meta:
         abstract = True
         # Removing this unique together contain, because there is limitation in DRF validator
-        # for unique fields, the client have to deal with it being unique.
+        # for unique fields when updated, the client have to deal with it being unique.
         # Keep the commented line below, as an remainder
         # unique_together = ('resume_subsection_fk', 'position',)
 

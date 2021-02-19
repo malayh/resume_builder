@@ -304,3 +304,13 @@ class ResumeProjectSummaryMapList(GenericList):
 class ResumeProjectSummaryMapDetail(GenericDetail):
     MODEL_CLASS = Project_Summary_Resume_Map
     SERIALIZER_CLASS = Project_Summary_Resume_Map_S
+
+
+class ResumeXPMapList(GenericList):
+    MODEL_CLASS = Experiece_Resume_Map
+    SERIALIZER_CLASS = Experiece_Resume_Map_S
+    allowed_filters = ['resume_fk','resume_subsection_fk']
+
+class ResumeXPMapDetail(GenericDetail):
+    MODEL_CLASS = Experiece_Resume_Map
+    SERIALIZER_CLASS = Experiece_Resume_Map_S

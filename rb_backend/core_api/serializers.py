@@ -88,3 +88,9 @@ class Project_Summary_Resume_Map_S(serializers.ModelSerializer):
         fields = resume_map_common_fields + ['project_summary_fk']
         fks = resume_map_fk_fields + ['project_summary_fk']
 
+class Experiece_Resume_Map_S(serializers.ModelSerializer):
+    class Meta:
+        model = Experiece_Resume_Map
+        fields = resume_map_common_fields + ['job_profile_fk']
+        fks = resume_map_fk_fields + ['job_profile_fk']
+        
