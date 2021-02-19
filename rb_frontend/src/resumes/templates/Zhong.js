@@ -5,6 +5,8 @@ import './resume_base.css';
 import './Zhong.css';
 
 import {DBEndpoint} from '../../common/DB';
+import {getDisplayDate,parseToDate} from '../../common/util';
+
 import {add_icon,edit_icon,delete_icon,done_icon, downarrow} from '../../common/Icons'
 import { map, timers } from 'jquery';
 
@@ -235,18 +237,85 @@ class HoverDropdown extends React.Component {
 }
 
 class SummaryMappableMapping extends React.Component {
+    //@props: id : Mapping id. will be id of coreapi/resumes/{one of edu,xps,projects}
+    //@props: project_summary_opts:  { id : {id, project_fk, summary} }
+    //@props: project_opts: {id : { id : 1, title:"Lorem Ipsum"}}
+    //@props: onAddSummaryMap : callback when summry is mapped : Params: project_summary_id,map_prefix,map_id (to which mapping the summary is to be mapped)
+    //@props: onDeleteSummaryMap : callback when summary map is deleted: Param: project_summary_id,map_prefix
+    //@props: mapPrefix : can be one of ["edumap","xpmap","projectmap"] : to be passed in the onAddSummary callback
+
+    constructor(props){
+        super(props);
+        this.state = {
+            summary_map : {
+                // 1 : {id:1,summary:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ut erat turpis. Ut pretium nibh id velit vestibulum hendrerit. Fusce vestibulum dolor ac ultricies tincidunt. Integer sed suscipit orci, non sollicitudin diam." , 
+                //     project_fk: 4},
+                // 2 : {id:1,summary:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ut erat turpis. Ut pretium nibh id velit vestibulum hendrerit. Fusce vestibulum dolor ac ultricies tincidunt. Integer sed suscipit orci, non sollicitudin diam." , 
+                // project_fk: 4},
+            }
+        };
+
+        this.onAddSummary = this.onAddSummary.bind(this); 
+    }
+
+    onAddSummary(project_summary_id){
+        let _sm = Object.assign({},this.state.summary_map);
+        _sm[project_summary_id] = this.props.project_summary_opts[project_summary_id];
+        this.setState({summary_map:_sm});
+        this.props.onAddSummaryMap(project_summary_id,this.props.mapPrefix,this.props.id);
+    }
     render(){
+        // group by project_fk operation
+        // prj_smry = { project_id : [ {id, project_fk, summary} ] }
+        let prj_smry = {};
+        for(let i in this.props.project_summary_opts){
+            let project_id = this.props.project_summary_opts[i]['project_fk'];
+            if(project_id in prj_smry)
+                prj_smry[project_id].push(this.props.project_summary_opts[i])
+            else
+                prj_smry[project_id] = [this.props.project_summary_opts[i]];
+        }
+
+
         return (
             <>
             <div className="maping-editor">
                 <div className="labelled-info" style={{display:"flex"}}>
-                    <div className="label-ld">{this.props.title}</div>
-                    <div className="dropdowns">
-                        <HoverDropdown name={add_icon} heading="Select project summary">
+                    <span className="label-ld">{this.props.title}</span>
+
+                    <span style={{padding:"0.3em"}}>
+                        <HoverDropdown name={add_icon} heading="Select Project Summary">
+                        {
+                            Object.keys(prj_smry).map( project_id=> {
+                                return (
+                                    <HoverDropdown name={this.props.project_opts[project_id]['title']} onSelect={this.onAddSummary}>
+                                    {
+                                        prj_smry[project_id].map((summary) =>{
+                                            return <span key={summary.id} eventKey={summary.id}>{summary.summary.substring(0,50)}...</span>
+                                        })
+                                    }
+                                    </HoverDropdown>    
+                                );
+                            })
+                        }
                         </HoverDropdown>
-                    </div>
+                    </span>
                 </div>
                 <span className="button" onClick={()=>this.props.onDelete(this.props.id)}>{delete_icon}</span>
+            </div>
+            <div>
+            {
+                Object.keys(this.state.summary_map).map(key => {
+                    return (
+                        <div className="maping-editor" >
+                            <div style={{width:"90%",paddingLeft:"1em", display:"flex"}}>
+                                <span>{this.state.summary_map[key]['summary']}</span>
+                                <span className="button" onClick={()=>this.props.onDeleteSummaryMap(key,this.props.mapPrefix)}>{delete_icon}</span>
+                            </div>
+                        </div>
+                    );
+                })
+            }
             </div>
             </>
         );
@@ -254,7 +323,10 @@ class SummaryMappableMapping extends React.Component {
 }
 
 class MainSubsection extends React.Component {
-    //@props: xp_opts: id : { id : 1, profile:"Software Engineer", company: "subex", location: "", start_time:, end_time: is_current:}
+    //@props: xp_opts: {id : { id : 1, profile:"Software Engineer", company: "subex", location: "", start_time:, end_time: is_current:}}
+    //@props: project_opts: {id : { id : 1, title:"Lorem Ipsum"}}
+    //@props: edu_opts: {id : {id,degree,provider,start_time,end_time,is_current}}
+    //@props: project_summary_opts:  { id :  {id, project_fk, summary} }
     constructor(props){
         super(props);
         this.state = {
@@ -270,9 +342,26 @@ class MainSubsection extends React.Component {
             project_mapping : [
                 // {id: 1, position: 1, template_prop:null, project_fk: 53, title: "Some name"}
             ],
+            edu_mapping : [
+                // {id: 1, position: 1, template_prop:null, education_fk: 53, degree: ""}
+            ],
 
-        }
+            // project_summaries are mapped to other subsection-CONTENT mappings. Using the template_prop
+            // So there is no FK constraint on these mapping. That constraint has to be manually checked.
+            project_summary_mapping : {
+                to_project : {
+                    // project_map_id : [{id: 1, position: 1, template_prop: projectmap_42, project_summary_fk: 53, summary:""}]
+                },
+                to_edu : {
+                    // education_map_id : [{id: 1, position: 1, template_prop: edumap_24, project_summary_fk: 53, summary:""}]
+                },
+                to_xp : {
+                    // xp_map_id : [{id: 1, position: 1, template_prop: xpmap_45, project_summary_fk: 53, summary:""}]
+                }
+            },
+        };
 
+        
         this.dispRef = React.createRef();
         this.formRef = React.createRef();
         
@@ -285,6 +374,65 @@ class MainSubsection extends React.Component {
         this.dbProjectMap = new DBEndpoint('coreapi/resumes/projects/');
         this.onAddProjectMap = this.onAddProjectMap.bind(this);
         this.onDeleteProjectMap = this.onDeleteProjectMap.bind(this);
+        
+        this.max_edu_map_pos = 1;
+        this.dbEduMap = new DBEndpoint('coreapi/resumes/edus/');
+        this.onAddEduMap = this.onAddEduMap.bind(this);
+        this.onDeleteEduMap = this.onDeleteEduMap.bind(this);
+        
+        this.max_xp_map_pos = 1;
+        this.dbXpMap = new DBEndpoint('coreapi/resumes/xps/');
+        this.onAddXpMap = this.onAddXpMap.bind(this);
+        this.onDeleteXpMap = this.onDeleteXpMap.bind(this);
+
+        this.project_summary_map_pos = {
+            to_project : 1,
+            to_edu : 1,
+            to_xp : 1
+        };
+        this.prj_smry_template_prop_prefixes = new Set(["edumap","xpmap","projectmap"]);
+        this.dbPrjSumarryMap = new DBEndpoint('coreapi/resumes/projectsummaries/');
+        this.onAddProjectSummaryMap = this.onAddProjectSummaryMap.bind(this);
+        this.onDeleteProjectSummaryMap = this.onDeleteProjectSummaryMap.bind(this);
+    }
+
+    async loadProjectSummaryMappings(){
+        let data = await this.dbPrjSumarryMap.addFilter({resume_subsection_fk:this.state.id}).readAll();
+        let to_project = [];
+        let to_edu = [];
+        let to_xp = [];
+        for(let i of data){
+            i['summary'] = this.props.project_summary_opts[i.id]['summary'];
+            if( i['template_prop'] === null )
+                continue;
+            
+            let _to = i['template_prop'].split("_");
+            if(_to.length < 2){
+                // possibly delete the corrupt mapping
+                continue;
+            }
+
+            if( !this.prj_smry_template_prop_prefixes.has(_to[0]) ){
+                // possibly delete the corrupt mapping
+                continue;
+            }
+
+            if(_to[0] === "projectmap"){
+                to_project.push(i);
+            }
+            else if(_to[0] === "edumap"){
+                to_edu.push(i);
+            }
+            else{
+                to_xp.push(i);
+            }
+        }
+
+        let _sm = Object.assign({},this.state.project_summary_mapping);
+        _sm['to_project'] = to_project;
+        _sm['to_edu'] = to_edu;
+        _sm['to_xp'] = to_xp;
+        this.setState({project_summary_mapping:_sm});
     }
 
     async loadMappings(){
@@ -299,8 +447,36 @@ class MainSubsection extends React.Component {
         }
 
         this.setState({project_mapping:_pm});
-        
+
+        data = await this.dbEduMap.addFilter({resume_subsection_fk:this.state.id}).readAll();
+        data.sort((a,b) => (a.position > b.position ? 1 : -1));
+        let _em = [];
+        for(let i of data){
+            i['degree'] = this.props.edu_opts[i['education_fk']]['degree'];
+            _em.push(i);
+            if(i['position'] > this.max_edu_map_pos)
+                this.max_edu_map_pos = i['position'];
+        }
+
+        this.setState({edu_mapping:_em});
+
+        data = await this.dbXpMap.addFilter({resume_subsection_fk:this.state.id}).readAll();
+        data.sort((a,b) => (a.position > b.position ? 1 : -1));
+        let _xpm = [];
+        for(let i of data){
+            i['profile'] = this.props.xp_opts[i['job_profile_fk']]['profile'];
+            _xpm.push(i);
+            if(i['position'] > this.max_xp_map_pos)
+                this.max_xp_map_pos = i['position'];
+        }
+
+        this.setState({xp_mapping:_xpm});
+
+
+        this.loadProjectSummaryMappings();
+
     }
+
     componentDidMount(){
         this.formRef.current.style.display='None'; 
         this.dispRef.current.style.display='';
@@ -373,6 +549,87 @@ class MainSubsection extends React.Component {
         });
     }
 
+    onAddEduMap(edu_fk){
+        let new_map = {
+            education_fk : edu_fk, 
+            resume_fk : this.state.resume_fk, 
+            resume_subsection_fk : this.state.id,
+            position : this.max_edu_map_pos+1
+        };
+        this.dbEduMap.createOne(new_map)
+        .then(data =>{
+            data['degree'] = this.props.edu_opts[edu_fk]['degree'];
+            let _em = Object.assign([],this.state.edu_mapping);
+            _em.push(data);
+            this.setState({edu_mapping:_em});
+            this.max_edu_map_pos++; 
+        })
+    }
+
+    onDeleteEduMap(map_id){
+        let _em = Object.assign([],this.state.edu_mapping);
+        let index = -1;
+        for(let i=0 ; i < _em.length ; i++){
+            if(_em[i].id === map_id){
+                index = i;
+                break;
+            }
+        }
+        if(index < 0)
+            return;
+
+        _em.splice(index,1);
+
+        this.dbEduMap.deleteOne(map_id)
+        .then(()=>{
+            this.setState({edu_mapping:_em});            
+        });
+    }
+
+    onAddXpMap(job_profile_fk){
+        let new_map = {
+            job_profile_fk : job_profile_fk, 
+            resume_fk : this.state.resume_fk, 
+            resume_subsection_fk : this.state.id,
+            position : this.max_xp_map_pos+1
+        };
+        this.dbXpMap.createOne(new_map)
+        .then(data =>{
+            data['profile'] = this.props.xp_opts[job_profile_fk]['profile'];
+            let _xpm = Object.assign([],this.state.xp_mapping);
+            _xpm.push(data);
+            this.setState({xp_mapping:_xpm});
+            this.max_xp_map_pos++; 
+        })
+    }
+    onDeleteXpMap(map_id){
+        let _xpm = Object.assign([],this.state.xp_mapping);
+        let index = -1;
+        for(let i=0 ; i < _xpm.length ; i++){
+            if(_xpm[i].id === map_id){
+                index = i;
+                break;
+            }
+        }
+        if(index < 0)
+            return;
+
+        _xpm.splice(index,1);
+
+        this.dbXpMap.deleteOne(map_id)
+        .then(()=>{
+            this.setState({xp_mapping:_xpm});            
+        });
+    }
+
+
+    onAddProjectSummaryMap(project_summary_id,map_prefix,map_id){
+        console.log(project_summary_id,map_prefix,map_id);
+    }
+    onDeleteProjectSummaryMap(project_summary_id,map_prefix){
+        console.log(project_summary_id,map_prefix);
+        
+    }
     render(){
         var main = (
             <div className="resume-sub-section" ref={this.dispRef}>
@@ -385,6 +642,7 @@ class MainSubsection extends React.Component {
                 </div>
 
                 {
+                    // Project mapping display
                     this.state.project_mapping.map(val=>{
                         return(
                             <div className="labelled-desc">
@@ -394,7 +652,48 @@ class MainSubsection extends React.Component {
 
                     })
                 }
+                {
+                    // XP mapping display
+                    this.state.xp_mapping.map(val =>{
+                        let label = val.profile;
+                        let start = this.props.xp_opts[val.job_profile_fk]['start_time'] === null ? "" : getDisplayDate(parseToDate(this.props.xp_opts[val.job_profile_fk]['start_time']));                        
+                        let end = this.props.xp_opts[val.job_profile_fk]['end_time'] === null ? "" : getDisplayDate(parseToDate(this.props.xp_opts[val.job_profile_fk]['end_time'])); 
+                        if(this.props.xp_opts[val.job_profile_fk]['is_current'] === true)
+                            end = "Present"
 
+                        let subLabel = this.props.xp_opts[val.job_profile_fk]['company'];
+                        if(subLabel !== null && this.props.xp_opts[val.job_profile_fk]["location"] !== null)
+                            subLabel+="  ,"+this.props.xp_opts[val.job_profile_fk]["location"];
+
+                        return (
+                            <div className="labelled-desc">
+                                <div className="label-ld">{label}</div>
+                                {start && <div className="timeframe">{start} - {end}</div>}
+                                {subLabel && <div className="sub-label">{subLabel}</div>}
+                            </div>
+                        );
+                    })
+                }
+                {
+                    // edu mapping display
+                    this.state.edu_mapping.map(val =>{
+                        let label = val.degree;
+                        let start = this.props.edu_opts[val.education_fk]['start_time'] === null ? "" : getDisplayDate(parseToDate(this.props.edu_opts[val.education_fk]['start_time']));                        
+                        let end = this.props.edu_opts[val.education_fk]['end_time'] === null ? "" : getDisplayDate(parseToDate(this.props.edu_opts[val.education_fk]['end_time'])); 
+                        if(this.props.edu_opts[val.education_fk]['is_current'] === true)
+                            end = "Present"
+
+                        let subLabel = this.props.edu_opts[val.education_fk]['provider'];
+
+                        return (
+                            <div className="labelled-desc">
+                                <div className="label-ld">{label}</div>
+                                {start && <div className="timeframe">{start} - {end}</div>}
+                                {subLabel && <div className="sub-label">{subLabel}</div>}
+                            </div>
+                        );
+                    })
+                }
             </div>
         );
         var form = (
@@ -415,16 +714,64 @@ class MainSubsection extends React.Component {
                                 key={val.id}
                                 id={val.id}
                                 title={val.title}
-                                onDelete={this.onDeleteProjectMap}/>
+                                mapPrefix="projectmap"
+                                onAddSummaryMap={this.onAddProjectSummaryMap}
+                                onDeleteSummaryMap={this.onDeleteProjectSummaryMap}
+                                onDelete={this.onDeleteProjectMap}
+                                project_opts={this.props.project_opts}
+                                project_summary_opts={this.props.project_summary_opts}/>
                         );
                     })
                 }
                 </div>
 
+                <div>
+                {
+                    // Edu map edit
+                    this.state.edu_mapping.map(val => {
+                        return (
+                            <SummaryMappableMapping
+                                key={val.id}
+                                id={val.id}
+                                title={val.degree}
+                                mapPrefix="edumap"
+                                onAddSummaryMap={this.onAddProjectSummaryMap}
+                                onDeleteSummaryMap={this.onDeleteProjectSummaryMap}
+                                onDelete={this.onDeleteEduMap}
+                                project_opts={this.props.project_opts}
+                                project_summary_opts={this.props.project_summary_opts}/>
+                        );
+                    })
+                }
+                </div>
+
+                <div>
+                {
+                    // XP map edit
+                    this.state.xp_mapping.map(val => {
+                        return (
+                            <SummaryMappableMapping
+                                key={val.id}
+                                id={val.id}
+                                title={val.profile}
+                                mapPrefix="xpmap"
+                                onAddSummaryMap={this.onAddProjectSummaryMap}
+                                onDeleteSummaryMap={this.onDeleteProjectSummaryMap}
+                                onDelete={this.onDeleteXpMap}
+                                project_opts={this.props.project_opts}
+                                project_summary_opts={this.props.project_summary_opts}/>
+                        );
+                    })
+                }
+                </div>
+
+                
+
+
                 <div className="heading-edit">
                     <div className="dropdowns">
                         <HoverDropdown name={add_icon} heading="Select Mapping">
-                            <HoverDropdown name="Experiences">
+                            <HoverDropdown name="Experiences" onSelect={this.onAddXpMap}>
                             {
                                 Object.keys(this.props.xp_opts).map(key=>{
                                     return <span key={key} eventKey={key}>{this.props.xp_opts[key]['profile']}</span>
@@ -438,12 +785,18 @@ class MainSubsection extends React.Component {
                                 })
                             }
                             </HoverDropdown>
+                            <HoverDropdown name="Education" onSelect={this.onAddEduMap}>
+                            {
+                                Object.keys(this.props.edu_opts).map(key=>{
+                                    return <span key={key} eventKey={key}>{this.props.edu_opts[key]['degree']}</span>
+                                })
+                            }
+                            </HoverDropdown>
                         </HoverDropdown>
                     </div>
                 </div>
 
             </div>
-
             
         );
 
@@ -832,6 +1185,7 @@ export class Composer extends React.Component {
             user_name : null,
             profile : null,
             summary: null,
+
             sidebar_subsec : [
                 // {"id": 8, "resume_fk": 22, "title": "Portfolio", "position": 101},
             ],
@@ -852,6 +1206,12 @@ export class Composer extends React.Component {
             },
             projects : {
                 // id : { id : 1, title:"Lorem Ipsum"}
+            },
+            project_summaries:{
+                // id : {id, project_fk, summary}
+            },
+            educataions : {
+                // id : {id,degree,provider,start_time,end_time,is_current}
             }
             
         }
@@ -1013,20 +1373,36 @@ export class Composer extends React.Component {
             
         this.setState({skills:_skills});
 
-        let _xp = {}
+        let _xp = {};
         data = await new DBEndpoint('coreapi/jobprofiles/').readAll();
         for(let i of data)
             _xp[i.id] = i;
 
         this.setState({xp:_xp});
 
-        let _prj = {}
+        let _prj = {};
         data = await new DBEndpoint('coreapi/projects/').readAll();
         for(let i of data){
             _prj[i.id] = {id : i.id, title: i.title }
         }
 
         this.setState({projects:_prj});
+
+        let _smr = {};
+        for(let project_id in _prj){
+            data = await new DBEndpoint('coreapi/projects/'+project_id+'/summaries/').readAll();
+            for(let i of data){
+                _smr[i.id] = i;
+            }
+        }
+
+        this.setState({project_summaries:_smr});
+
+        let _edu = {};
+        data = await new DBEndpoint('coreapi/edus/').readAll();
+        for(let i of data)
+            _edu[i.id] = i
+        this.setState({educataions:_edu})
 
 
 
@@ -1102,6 +1478,8 @@ export class Composer extends React.Component {
                                             onChange={this.onUpdateMainSection}
                                             xp_opts={this.state.xp}
                                             project_opts={this.state.projects}
+                                            project_summary_opts={this.state.project_summaries}
+                                            edu_opts={this.state.educataions}
                                         />)
                                     ;
                                 })
