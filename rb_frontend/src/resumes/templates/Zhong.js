@@ -241,30 +241,25 @@ class SummaryMappableMapping extends React.Component {
     //@props: project_summary_opts:  { id : {id, project_fk, summary} }
     //@props: project_opts: {id : { id : 1, title:"Lorem Ipsum"}}
     //@props: onAddSummaryMap : callback when summry is mapped : Params: project_summary_id,map_prefix,map_id (to which mapping the summary is to be mapped)
-    //@props: onDeleteSummaryMap : callback when summary map is deleted: Param: project_summary_id,map_prefix
+    //@props: onDeleteSummaryMap : callback when summary map is deleted: Param: project_summary_id,map_prefix,map_id
     //@props: mapPrefix : can be one of ["edumap","xpmap","projectmap"] : to be passed in the onAddSummary callback
+    //@props: summaryMappings : [{id: 1, position: 1, template_prop: projectmap_42, project_summary_fk: 53, summary:""}]
 
     constructor(props){
         super(props);
-        this.state = {
-            summary_map : {
-                // 1 : {id:1,summary:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ut erat turpis. Ut pretium nibh id velit vestibulum hendrerit. Fusce vestibulum dolor ac ultricies tincidunt. Integer sed suscipit orci, non sollicitudin diam." , 
-                //     project_fk: 4},
-                // 2 : {id:1,summary:"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ut erat turpis. Ut pretium nibh id velit vestibulum hendrerit. Fusce vestibulum dolor ac ultricies tincidunt. Integer sed suscipit orci, non sollicitudin diam." , 
-                // project_fk: 4},
-            }
-        };
-
-        this.onAddSummary = this.onAddSummary.bind(this); 
+        
+        this.onAddSummary = this.onAddSummary.bind(this);
+        this.onDeleteSummary = this.onDeleteSummary.bind(this);
     }
 
     onAddSummary(project_summary_id){
-        let _sm = Object.assign({},this.state.summary_map);
-        _sm[project_summary_id] = this.props.project_summary_opts[project_summary_id];
-        this.setState({summary_map:_sm});
         this.props.onAddSummaryMap(project_summary_id,this.props.mapPrefix,this.props.id);
     }
+    onDeleteSummary(project_summary_id){
+        this.props.onDeleteSummaryMap(project_summary_id,this.props.mapPrefix,this.props.id);
+    }
     render(){
+        
         // group by project_fk operation
         // prj_smry = { project_id : [ {id, project_fk, summary} ] }
         let prj_smry = {};
@@ -303,20 +298,22 @@ class SummaryMappableMapping extends React.Component {
                 </div>
                 <span className="button" onClick={()=>this.props.onDelete(this.props.id)}>{delete_icon}</span>
             </div>
+            
             <div>
             {
-                Object.keys(this.state.summary_map).map(key => {
+                this.props.summaryMappings.map( val => {
                     return (
                         <div className="maping-editor" >
                             <div style={{width:"90%",paddingLeft:"1em", display:"flex"}}>
-                                <span>{this.state.summary_map[key]['summary']}</span>
-                                <span className="button" onClick={()=>this.props.onDeleteSummaryMap(key,this.props.mapPrefix)}>{delete_icon}</span>
+                                <span>{val['summary']}</span>
+                                <span className="button" onClick={()=>this.onDeleteSummary(val['id'])}>{delete_icon}</span>
                             </div>
                         </div>
                     );
                 })
             }
             </div>
+
             </>
         );
     }
@@ -349,13 +346,14 @@ class MainSubsection extends React.Component {
             // project_summaries are mapped to other subsection-CONTENT mappings. Using the template_prop
             // So there is no FK constraint on these mapping. That constraint has to be manually checked.
             project_summary_mapping : {
-                to_project : {
+                projectmap : {
+                    // 13 : [{id: 1, position: 1, template_prop: "projectmap_42", project_summary_fk: 18, summary:"Created multithreaded web crawler to catalogue product information across multiple shopping sites to mine product pricing and demand insights for an online retail seller."}]
                     // project_map_id : [{id: 1, position: 1, template_prop: projectmap_42, project_summary_fk: 53, summary:""}]
                 },
-                to_edu : {
+                edumap : {
                     // education_map_id : [{id: 1, position: 1, template_prop: edumap_24, project_summary_fk: 53, summary:""}]
                 },
-                to_xp : {
+                xpmap : {
                     // xp_map_id : [{id: 1, position: 1, template_prop: xpmap_45, project_summary_fk: 53, summary:""}]
                 }
             },
@@ -386,53 +384,14 @@ class MainSubsection extends React.Component {
         this.onDeleteXpMap = this.onDeleteXpMap.bind(this);
 
         this.project_summary_map_pos = {
-            to_project : 1,
-            to_edu : 1,
-            to_xp : 1
+            projectmap : 1,
+            edumap : 1,
+            xpmap : 1
         };
         this.prj_smry_template_prop_prefixes = new Set(["edumap","xpmap","projectmap"]);
         this.dbPrjSumarryMap = new DBEndpoint('coreapi/resumes/projectsummaries/');
         this.onAddProjectSummaryMap = this.onAddProjectSummaryMap.bind(this);
         this.onDeleteProjectSummaryMap = this.onDeleteProjectSummaryMap.bind(this);
-    }
-
-    async loadProjectSummaryMappings(){
-        let data = await this.dbPrjSumarryMap.addFilter({resume_subsection_fk:this.state.id}).readAll();
-        let to_project = [];
-        let to_edu = [];
-        let to_xp = [];
-        for(let i of data){
-            i['summary'] = this.props.project_summary_opts[i.id]['summary'];
-            if( i['template_prop'] === null )
-                continue;
-            
-            let _to = i['template_prop'].split("_");
-            if(_to.length < 2){
-                // possibly delete the corrupt mapping
-                continue;
-            }
-
-            if( !this.prj_smry_template_prop_prefixes.has(_to[0]) ){
-                // possibly delete the corrupt mapping
-                continue;
-            }
-
-            if(_to[0] === "projectmap"){
-                to_project.push(i);
-            }
-            else if(_to[0] === "edumap"){
-                to_edu.push(i);
-            }
-            else{
-                to_xp.push(i);
-            }
-        }
-
-        let _sm = Object.assign({},this.state.project_summary_mapping);
-        _sm['to_project'] = to_project;
-        _sm['to_edu'] = to_edu;
-        _sm['to_xp'] = to_xp;
-        this.setState({project_summary_mapping:_sm});
     }
 
     async loadMappings(){
@@ -545,7 +504,8 @@ class MainSubsection extends React.Component {
 
         this.dbProjectMap.deleteOne(map_id)
         .then(()=>{
-            this.setState({project_mapping:_pm});            
+            this.setState({project_mapping:_pm});
+            this.clearProjectSummaryMapForEntity("projectmap",map_id);        
         });
     }
 
@@ -565,7 +525,6 @@ class MainSubsection extends React.Component {
             this.max_edu_map_pos++; 
         })
     }
-
     onDeleteEduMap(map_id){
         let _em = Object.assign([],this.state.edu_mapping);
         let index = -1;
@@ -582,7 +541,8 @@ class MainSubsection extends React.Component {
 
         this.dbEduMap.deleteOne(map_id)
         .then(()=>{
-            this.setState({edu_mapping:_em});            
+            this.setState({edu_mapping:_em});
+            this.clearProjectSummaryMapForEntity("edumap",map_id)          
         });
     }
 
@@ -618,17 +578,121 @@ class MainSubsection extends React.Component {
 
         this.dbXpMap.deleteOne(map_id)
         .then(()=>{
-            this.setState({xp_mapping:_xpm});            
+            this.setState({xp_mapping:_xpm});
+            this.clearProjectSummaryMapForEntity("xpmap",map_id);         
         });
     }
 
+    async loadProjectSummaryMappings(){
+        let data = await this.dbPrjSumarryMap.addFilter({resume_subsection_fk:this.state.id}).readAll();
+        let projectmap = {}
+        let edumap = {};
+        let xpmap = {};
+        for(let i of data){            
+            i['summary'] = this.props.project_summary_opts[i.project_summary_fk]['summary'];
+            
+            if( i['template_prop'] === null )
+                continue;
+            
+            let _to = i['template_prop'].split("_");
+            if(_to.length < 2){
+                // possibly delete the corrupt mapping
+                continue;
+            }
+                
+            if( !this.prj_smry_template_prop_prefixes.has(_to[0]) ){
+                // possibly delete the corrupt mapping
+                continue;
+            }
 
-    onAddProjectSummaryMap(project_summary_id,map_prefix,map_id){
-        console.log(project_summary_id,map_prefix,map_id);
+            if(_to[0] === "projectmap"){
+                if(_to[1] in projectmap)
+                    projectmap[_to[1]].push(i);
+                else
+                    projectmap[_to[1]] = [i];
+            }
+            else if(_to[0] === "edumap"){
+                if(_to[1] in edumap)
+                    edumap[_to[1]].push(i);
+                else
+                    edumap[_to[1]] = [i];
+            }
+            else{
+                if(_to[1] in xpmap)
+                    xpmap[_to[1]].push(i);
+                else
+                    xpmap[_to[1]] = [i];
+            }
+        }
+
+        let _sm = Object.assign({},this.state.project_summary_mapping);
+        _sm['projectmap'] = projectmap;
+        _sm['edumap'] = edumap;
+        _sm['xpmap'] = xpmap;
+
+        this.setState({project_summary_mapping:_sm});
     }
-    onDeleteProjectSummaryMap(project_summary_id,map_prefix){
-        console.log(project_summary_id,map_prefix);
+    onAddProjectSummaryMap(project_summary_id,map_prefix,map_id){
+        let new_map = {
+            project_summary_fk : project_summary_id, 
+            resume_fk : this.state.resume_fk, 
+            resume_subsection_fk : this.state.id,
+            position : this.project_summary_map_pos[map_prefix]+1,
+            template_prop : map_prefix+"_"+map_id
+        };
+
+        this.dbPrjSumarryMap.createOne(new_map)
+        .then(data => {
+            data['summary'] = this.props.project_summary_opts[project_summary_id]['summary'];
+            
+            let _sm = Object.assign({},this.state.project_summary_mapping);
+            if(map_id in _sm[map_prefix])
+                _sm[map_prefix][map_id].push(data);
+            else
+                _sm[map_prefix][map_id] = [data];
+    
+            this.project_summary_map_pos[map_prefix]++;
+    
+            this.setState({project_summary_mapping:_sm});
+        });
         
+
+    }
+    onDeleteProjectSummaryMap(project_summary_map_id,map_prefix,map_id){
+        let _sm = Object.assign({},this.state.project_summary_mapping);
+        
+        if( !(map_id in _sm[map_prefix]) )
+            return;
+        
+        let index = -1;
+        for(let i = 0; i < _sm[map_prefix][map_id].length; i++){
+            if(_sm[map_prefix][map_id][i].id === project_summary_map_id){
+                index = i;
+                break;
+            }
+        }
+
+        if(index < 0)
+            return;
+
+
+        this.dbPrjSumarryMap.deleteOne(project_summary_map_id)
+        .then(data => {
+            _sm[map_prefix][map_id].splice(index,1);
+            this.setState({project_summary_mapping:_sm});        
+
+        });
+        
+        
+    }
+    clearProjectSummaryMapForEntity(map_prefix,id){
+        //mapping of project summaries to edu mapping /project mapping / xp mapping don't have FK contraint. So such mappings has to be manually deleted.
+        if(!(id in this.state.project_summary_mapping[map_prefix]))
+            return;
+
+        for(let i of this.state.project_summary_mapping[map_prefix][id]){
+            this.dbPrjSumarryMap.deleteOne(i['id']);
+        }
     }
     render(){
         var main = (
@@ -647,6 +711,12 @@ class MainSubsection extends React.Component {
                         return(
                             <div className="labelled-desc">
                                 <div className="label-ld">{val.title}</div>
+                                {val.id in this.state.project_summary_mapping.projectmap && <ul> {
+                                    this.state.project_summary_mapping.projectmap[val.id].map( i => {
+                                        return <li className="desc">{i.summary}</li>
+                                    })
+                                }                                    
+                                </ul>}
                             </div>
                         );
 
@@ -670,6 +740,13 @@ class MainSubsection extends React.Component {
                                 <div className="label-ld">{label}</div>
                                 {start && <div className="timeframe">{start} - {end}</div>}
                                 {subLabel && <div className="sub-label">{subLabel}</div>}
+
+                                {val.id in this.state.project_summary_mapping.xpmap && <ul> {
+                                    this.state.project_summary_mapping.xpmap[val.id].map( i => {
+                                        return <li className="desc">{i.summary}</li>
+                                    })
+                                }                                    
+                                </ul>}
                             </div>
                         );
                     })
@@ -690,6 +767,12 @@ class MainSubsection extends React.Component {
                                 <div className="label-ld">{label}</div>
                                 {start && <div className="timeframe">{start} - {end}</div>}
                                 {subLabel && <div className="sub-label">{subLabel}</div>}
+                                {val.id in this.state.project_summary_mapping.edumap && <ul> {
+                                    this.state.project_summary_mapping.edumap[val.id].map( i => {
+                                        return <li className="desc">{i.summary}</li>
+                                    })
+                                }                                    
+                                </ul>}
                             </div>
                         );
                     })
@@ -709,12 +792,17 @@ class MainSubsection extends React.Component {
                 {
                     // Project map edit
                     this.state.project_mapping.map(val =>{
+                        let _sm =  [];
+                        if(val.id in this.state.project_summary_mapping["projectmap"])
+                            _sm = Object.assign([],this.state.project_summary_mapping["projectmap"][val.id])
+
                         return (
                             <SummaryMappableMapping
                                 key={val.id}
                                 id={val.id}
                                 title={val.title}
                                 mapPrefix="projectmap"
+                                summaryMappings={_sm}
                                 onAddSummaryMap={this.onAddProjectSummaryMap}
                                 onDeleteSummaryMap={this.onDeleteProjectSummaryMap}
                                 onDelete={this.onDeleteProjectMap}
@@ -729,12 +817,14 @@ class MainSubsection extends React.Component {
                 {
                     // Edu map edit
                     this.state.edu_mapping.map(val => {
+                        let _sm = val.id in this.state.project_summary_mapping["edumap"] ? this.state.project_summary_mapping["edumap"][val.id] : [];
                         return (
                             <SummaryMappableMapping
                                 key={val.id}
                                 id={val.id}
                                 title={val.degree}
                                 mapPrefix="edumap"
+                                summaryMappings={_sm}
                                 onAddSummaryMap={this.onAddProjectSummaryMap}
                                 onDeleteSummaryMap={this.onDeleteProjectSummaryMap}
                                 onDelete={this.onDeleteEduMap}
@@ -749,12 +839,14 @@ class MainSubsection extends React.Component {
                 {
                     // XP map edit
                     this.state.xp_mapping.map(val => {
+                        let _sm = val.id in this.state.project_summary_mapping["xpmap"] ? this.state.project_summary_mapping["xpmap"][val.id] : [];
                         return (
                             <SummaryMappableMapping
                                 key={val.id}
                                 id={val.id}
                                 title={val.profile}
                                 mapPrefix="xpmap"
+                                summaryMappings={_sm}
                                 onAddSummaryMap={this.onAddProjectSummaryMap}
                                 onDeleteSummaryMap={this.onDeleteProjectSummaryMap}
                                 onDelete={this.onDeleteXpMap}
