@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,7 +46,10 @@ INSTALLED_APPS = [
 
     # Resume builder app
     'core_api',
-    'users'
+    'users',
+
+    # renderer is not an app created using startapp
+    'renderer'
 ]
 
 MIDDLEWARE = [
@@ -143,3 +147,8 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
 ]
+
+PDF_STORE_DIR = BASE_DIR.joinpath('../pdfstore/').resolve()
+if not os.path.exists(PDF_STORE_DIR) or not os.path.isdir(PDF_STORE_DIR):
+    os.mkdir(PDF_STORE_DIR)
+

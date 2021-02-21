@@ -2,33 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from typing import ClassVar
+import os
+from django.http import FileResponse
 
+from rb_backend.settings import PDF_STORE_DIR
 
+from renderer import TemplateZhong
 from .models import *
 from .serializers import *
-
-"""
-TODO:
-    - Create generics for the List and detail view classes
-    - Protect FKs from being used by someone other than the creator
-
-API DOC:
-    - /coreapi/contacts/
-        - get   :get list
-        - post  :create
-    - /coreapi/contacts/<id>/
-        - get   : returns if exist
-        - put   : Update if exist
-        - delete: delete if exist
-    - /coreapi/skills/
-        - get   :get list
-        - post  :create
-    - /coreapi/skills/<id>/
-        - get   : returns if exist
-        - put   : Update if exist
-        - delete: delete if exist
-
-"""
 
 
 class GenericList(APIView):
@@ -314,3 +295,84 @@ class ResumeXPMapList(GenericList):
 class ResumeXPMapDetail(GenericDetail):
     MODEL_CLASS = Experiece_Resume_Map
     SERIALIZER_CLASS = Experiece_Resume_Map_S
+
+class RenderService(APIView):
+
+    def get_object_by_id(self,id:int, user,*,model_class):
+        """
+        If object found where id=<id> and requesting user is the creator, returns (object,status)
+        else returns (None,status)
+        """
+        try:
+            obj = model_class.objects.get(id=id)
+        except model_class.DoesNotExist:
+            return None,status.HTTP_404_NOT_FOUND 
+        if obj.user_fk != user:
+            return None,status.HTTP_403_FORBIDDEN
+
+        return obj,status.HTTP_200_OK
+
+
+    def get_mapping(self,subsec,*,fk,map_model,data_model_serializer):
+        _ret = []
+        _map = map_model.objects.filter(resume_subsection_fk=subsec).order_by('position').all()
+        for i in _map:
+            _d = {'template_prop' : i.template_prop ,"map_id":i.id }
+            _d.update(data_model_serializer(getattr(i,fk)).data)
+            _ret.append(_d)
+        
+        return _ret
+
+    def get_subsec_mappings(self, subsec):
+        """
+        arg: subsec is a Resume_Subsections object
+
+        Returns a subsec dict with following props
+        """
+        _ret = {
+            "title"             : subsec.title,
+            "id"                : subsec.id,
+            "position"          : subsec.position,
+            "skills"            : self.get_mapping(subsec,fk="skill_fk",map_model=Skill_Resume_Map,data_model_serializer=Skills_Serializer),
+            "contacts"          : self.get_mapping(subsec,fk="contact_fk",map_model=Contact_Resume_Map,data_model_serializer=Contact_Details_Serializer),
+            "educations"        : self.get_mapping(subsec,fk="education_fk",map_model=Education_Resume_Map,data_model_serializer=Educations_Serializer),
+            "projects"          : self.get_mapping(subsec,fk="project_fk",map_model=Project_Resume_Map,data_model_serializer=Projects_Serializer),
+            "xps"               : self.get_mapping(subsec,fk="job_profile_fk",map_model=Experiece_Resume_Map,data_model_serializer=Job_Profiles_Serializer),
+            "projectsummaries"  : self.get_mapping(subsec,fk="project_summary_fk",map_model=Project_Summary_Resume_Map,data_model_serializer=Projects_Summaries_Serializer)
+        }
+
+        return _ret
+
+    def get(self,request, resume_id: int):
+        _resume, _status = self.get_object_by_id(resume_id,request.user,model_class=Resumes)
+        if not _resume:
+            return Response(status=_status)
+        
+        _ret = {
+            "username": request.user.u_name,
+            "title" : _resume.title,
+            "jobprofile" : _resume.job_profile_fk.profile if _resume.job_profile_fk else None,
+            "profilesummary": _resume.profile_summary_fk.summary if _resume.profile_summary_fk else None
+        }
+
+        _subsecs = []
+        
+        for ss in Resume_Subsections.objects.filter(resume_fk=_resume).order_by('position').all():
+            _subsecs.append(self.get_subsec_mappings(ss))
+
+        _ret["subsections"] = _subsecs
+
+        filename = f"{request.user.u_name.replace(' ','')}_{_resume.title.replace(' ','')}.pdf"
+        pdfout = PDF_STORE_DIR.joinpath(filename).resolve()
+
+        tz = TemplateZhong()
+        tz.build_context(_ret)
+        tz.render(pdfout)
+
+        resume_file = open(pdfout,"r",encoding="utf-8")
+        resp = FileResponse(resume_file, content_type='pdf')
+        resp['Content-Length'] = os.path.getsize(pdfout)
+        resp['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+
+        return resp

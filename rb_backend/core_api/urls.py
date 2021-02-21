@@ -47,6 +47,11 @@ urlpatterns = [
     path('coreapi/resumes/xps/',ResumeXPMapList.as_view()),
     path('coreapi/resumes/xps/<int:pk>/',ResumeXPMapDetail.as_view()),
 
+    path('coreapi/rendered/<int:resume_id>/',RenderService.as_view()),
+
+
+
+
 
 
     # path('coreapi/resumes/<int:resume_id>/skills/',Resume_Skill_List.as_view()),
