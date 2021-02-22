@@ -218,6 +218,7 @@ class ResumeControl extends React.Component {
         this.onUpdate = this.onUpdate.bind(this);
         this.onDelete = this.onDelete.bind(this);
         this.onSelect = this.onSelect.bind(this);
+        this.onDownload = this.onDownload.bind(this);
 
         this.dbResume = new DBEndpoint('coreapi/resumes/');
         this.dbJobProfile = new DBEndpoint('coreapi/jobprofiles/');
@@ -313,6 +314,29 @@ class ResumeControl extends React.Component {
         this.loadData();
     }
 
+    onDownload(){
+        if(this.state.selected_resume === 0)
+            return
+
+        new DBEndpoint('coreapi/rendered/').downloadPdf(this.state.selected_resume)
+        .then(blob =>{
+            const url = window.URL.createObjectURL( new Blob([blob]),);
+
+            const link = document.createElement('a');
+            let filename = this.state.resumes[this.state.selected_resume]['title'].replace(' ','')+".pdf";
+            link.href = url;
+            link.setAttribute('download',filename);
+        
+            // Append to html link element page
+            document.body.appendChild(link);
+        
+            // Start download
+            link.click();
+        
+            // Clean up and remove the link
+            link.parentNode.removeChild(link);
+        });
+    }
     render(){
         var main = (
             <SectionBody heading="Resumes" onAdd={this.onAdd}>
@@ -350,7 +374,7 @@ class ResumeControl extends React.Component {
                             </Form.Control>
                         </div>
                         <div className="col-2">
-                            <span className="download-button">{download}</span>
+                            <span onClick={this.onDownload} className="download-button">{download}</span>
                         </div>
                     </div>
                 </Form.Group>

@@ -133,5 +133,13 @@ export class DBEndpoint{
         let resp = await fetch(this.apiUrl + id + '/', { headers: this.authHeaders, method:"DELETE" });
         return await resp.json();
     }
+    async downloadPdf(id){
+        let headers = Object.assign({},this.authHeaders);
+        headers['Content-Type'] = "application/pdf";
+        let resp = await fetch(this.apiUrl + id + '/',{ headers: this.authHeaders,method:"GET"});       
+        
+        let data = await resp.blob();
+        return data;
+    }
 }
 
