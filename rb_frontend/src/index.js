@@ -10,3 +10,5 @@ ReactDOM.render(
     document.getElementById('root')
 );
   
+
+document.title = "Resume Builder"; 
