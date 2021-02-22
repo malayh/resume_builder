@@ -8,8 +8,6 @@ import json
 class TemplateZhong(BaseRenderer):
     def __init__(self):
         css = [
-            # Hardcoding these for dev
-
             'zhong/bootstrap.min.css',
             'zhong/resume_base.css',
             'zhong/Zhong.css',

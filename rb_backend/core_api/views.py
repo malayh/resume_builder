@@ -369,8 +369,8 @@ class RenderService(APIView):
         tz.build_context(_ret)
         tz.render(pdfout)
 
-        resume_file = open(pdfout,"r",encoding="utf-8")
-        resp = FileResponse(resume_file, content_type='pdf')
+        resume_file = open(pdfout,"rb")
+        resp = FileResponse(resume_file, content_type='application/pdf')
         resp['Content-Length'] = os.path.getsize(pdfout)
         resp['Content-Disposition'] = f'attachment; filename="{filename}"'
         
