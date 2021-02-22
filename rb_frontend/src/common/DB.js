@@ -100,6 +100,12 @@ export class DBEndpoint{
         return this;
     }
     
+    reactOnStatus(status){
+        if(status === 401 ){
+            window.localStorage.clear();
+        }
+    }
+    
     async createOne(dbObj){
         
         let resp = await fetch(this.apiUrl, { headers: this.authHeaders, method:"POST", body:JSON.stringify(dbObj) });
@@ -116,6 +122,10 @@ export class DBEndpoint{
             }
         }
         let resp = await fetch(url,{ headers: this.authHeaders,method:"GET"});
+        
+        this.reactOnStatus(resp.status);
+        
+        
         this.filter = null;
         let data = await resp.json();
         return data;

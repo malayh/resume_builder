@@ -6,6 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './login.css';
 import '../main.css';
 import {configs} from '../Config'
+import loginpage_img from './loginpage_img.png';
 
 export default class LoginPage extends React.Component {
     
@@ -136,10 +137,42 @@ export default class LoginPage extends React.Component {
 
 
     render(){
+
+        const stepper = (
+            <div className="stepper">
+                <span className="stepper-item">
+                    <div className="step-count">Step 1</div>
+                    <div className="step-text">Create an account</div>
+                </span>
+                <span className="stepper-item">
+                    <div className="step-count">Step 2</div>
+                    <div className="step-text">Record you history</div>
+                </span>
+                <span className="stepper-item">
+                    <div className="step-count">Step 3</div>
+                    <div className="step-text">Select relevant info for the job</div>
+                </span>
+                <span className="stepper-item">
+                    <div className="step-count">Step 4</div>
+                    <div className="step-text">Download PDF!</div>
+                </span>         
+                
+	        </div>
+        );
         const content = (
             <div id="login-content">
                 <div className="container-fluid">
-                    <div className="row">
+                    <div className="row align-items-center">
+                        <div className="col">
+                            <div className="loginpage-details">
+                            <h1 className="app_name">Resume Builder</h1>
+                            <h2>Create customized resumes for every job you apply in just a <strong>few clicks!</strong> </h2>                            
+                            <p>Record you data once and create resumes tailored for a specific job in just few clicks!</p>
+                            <div style={{paddingTop:"2em"}}>
+                                {stepper}
+                            </div>
+                            </div>
+                        </div>
                     </div>
                 </div>                
             </div>
@@ -147,6 +180,7 @@ export default class LoginPage extends React.Component {
 
         const login_singup = (
             <div id="login-page">
+                <h4 className="app_name">Login or Create an account</h4> 
                 <div id="login-form">
                 <form className="register-form" onSubmit={this.handleSignup}>
                     <input type="text" name="name" placeholder="Name"/>
@@ -171,12 +205,12 @@ export default class LoginPage extends React.Component {
         const loginpage = (
             <div className="container-fluid">
                 <div className="row">
-                    <div className="col-lg-5 col-md-6 nopadding">
-                        <h1 id="app_name">Resume Builder</h1>
-                        {login_singup}
-                    </div>
                     <div className="col-lg-7 col-md-6 nopadding">
                         {content}
+                        {login_singup}
+                    </div>
+                    <div className="col-lg-5 col-md-6 nopadding">
+                        <img id="loginpageimage" src={loginpage_img}/>                    
                     </div>
                 </div>
             </div>

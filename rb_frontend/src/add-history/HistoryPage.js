@@ -95,7 +95,7 @@ class SkillSection extends React.Component{
     }
 
     addSkill(){
-        var new_skill = {name:'Skill Name',score:1}
+        var new_skill = {name:'Tap to edit',score:1}
         
         this.dbEndpoint.createOne(new_skill)
         .then(data => {

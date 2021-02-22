@@ -8,6 +8,7 @@ import LoginPage from './login/Login';
 import ResumePage from './resumes/ResumePage';
 import HistoryPage from './add-history/HistoryPage';
 import storageAvailable from './util'
+import {DBEndpoint} from './common/DB';
 
 import {Link, BrowserRouter as Router,Route, Switch, Redirect} from 'react-router-dom';
 
@@ -110,6 +111,7 @@ export default class ResumeBuilder extends React.Component {
             history.push(previous_path);
         }
 
+        // verify that login worked. If not, clear token and relogin
         this.setState({loggedIn:true});
     }
 
@@ -155,7 +157,7 @@ export default class ResumeBuilder extends React.Component {
                             }
                             </Route>
                             {/* Change the following route back to history page */}
-                            <Redirect exact from={this.basePath} to={this.resumesPath} /> 
+                            <Redirect exact from={this.basePath} to={this.historyPath} /> 
                         </Switch>
                     </div>
                 </div>

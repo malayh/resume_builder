@@ -5,6 +5,16 @@ import {add_icon} from './Icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Section.css';
 
+class EmptyInstuction extends React.Component {
+    render(){
+        return(
+            <div style={{padding:"1em"}}>
+                <p>Section Emplty!</p>
+                <p style={{fontSize:"10pt"}}>Click on the   {add_icon}   icon on top right hand corner of this box to add something</p>
+            </div>
+        );
+    }
+}
 export class SectionBody extends React.Component{
     //This is container-fluid, each child must be a bootstrp row
     constructor(props){
@@ -25,7 +35,7 @@ export class SectionBody extends React.Component{
                             </div>
                         </div>}
                     </div>
-                    { this.props.children }
+                    { React.Children.count(this.props.children) ? this.props.children : <EmptyInstuction/>}
                 </div>
             </div>
 
