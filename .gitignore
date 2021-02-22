@@ -4,3 +4,31 @@ __pychache__/*
 /rb_backend/db.sqlite3
 /rb_backend/static
 /rb_backend/media
+
+
+# dependencies
+rb_frontend/node_modules
+rb_frontend/.pnp
+rb_frontend/.pnp.js
+
+# testing
+rb_frontend/coverage
+
+# production
+rb_frontend/build
+
+# misc
+rb_frontend/.DS_Store
+rb_frontend/.env.local
+rb_frontend/.env.development.local
+rb_frontend/.env.test.local
+rb_frontend/.env.production.local
+
+rb_frontend/npm-debug.log*
+rb_frontend/yarn-debug.log*
+rb_frontend/yarn-error.log*
+
+
+3rd_party_stuff/
+
+deploy/
