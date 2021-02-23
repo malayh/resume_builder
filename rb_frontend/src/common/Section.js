@@ -9,7 +9,7 @@ class EmptyInstuction extends React.Component {
     render(){
         return(
             <div style={{padding:"1em"}}>
-                <p>Section Emplty!</p>
+                <p>Section Empty!</p>
                 <p style={{fontSize:"10pt"}}>Click on the   {add_icon}   icon on top right hand corner of this box to add something</p>
             </div>
         );
