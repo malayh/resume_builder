@@ -655,7 +655,7 @@ class EductaionSection extends React.Component{
 
     render(){
         var main = (
-            <SectionBody heading="Eductions" onAdd={this.onAdd}>
+            <SectionBody heading="Education" onAdd={this.onAdd}>
             {
                 Object.keys(this.state.edu).map((id,index)=>{
                     return <Eductaion key={id} id={id} {...this.state.edu[id]} onChange={this.onUpdate} onDelete={this.onDelete}/>
