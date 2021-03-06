@@ -4,7 +4,8 @@ __pychache__/*
 /rb_backend/db.sqlite3
 /rb_backend/static
 /rb_backend/media
-
+/imgs/
+/pdfstore/
 
 # dependencies
 rb_frontend/node_modules
