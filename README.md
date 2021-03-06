@@ -1,2 +1,2 @@
 ## Resume builder
-Live at : [Resume Buider](https://thahazarika.com/rb/)
+Live at : [Resume Buider](https://thehazarika.com/rb/)
