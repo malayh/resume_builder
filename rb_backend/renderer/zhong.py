@@ -3,7 +3,16 @@ from .renderer import BaseRenderer
 from typing import List, Dict
 from datetime import datetime
 import json
+import markdown
+import re
 
+def extract_anchor_for_sidebar_contacts(sidebar_text):
+    # Returns a anchor tag if parsed markdown has an anchor, otherwise return sidebar_text as it is
+    matched = re.search(r'<a.*?>.*?</a>', markdown.markdown(sidebar_text))
+    if matched:
+        return matched.group(0)
+    else:
+        return sidebar_text
 
 class TemplateZhong(BaseRenderer):
     def __init__(self):
@@ -36,9 +45,9 @@ class TemplateZhong(BaseRenderer):
 
             map_id = int(map_id)
             if map_id in _ret[map_type]:
-                _ret[map_type][map_id].append(ps["summary"])
+                _ret[map_type][map_id].append( markdown.markdown(ps["summary"]) )
             else:
-                 _ret[map_type][map_id] = [ps["summary"]]
+                 _ret[map_type][map_id] = [ markdown.markdown(ps["summary"]) ]
 
         return _ret
 
@@ -139,7 +148,7 @@ class TemplateZhong(BaseRenderer):
         for i in subsection["contacts"]:
             _d = {}
             _d["label"] = i["label"]
-            _d["value"] = i["value"]
+            _d["value"] = extract_anchor_for_sidebar_contacts(i["value"])
             if i["template_prop"]:
                 _d["label"] = i["template_prop"]
             contacts.append(_d)

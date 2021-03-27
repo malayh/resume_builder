@@ -8,10 +8,13 @@ djangorestframework==3.12.2
 isort==5.7.0
 Jinja2==2.11.3
 lazy-object-proxy==1.4.3
+Markdown==3.3.4
 MarkupSafe==1.1.1
 mccabe==0.6.1
 pdfkit==0.6.1
+pylint==2.6.0
 pytz==2020.5
+rope==0.18.0
 six==1.15.0
 soupsieve==2.1
 sqlparse==0.4.1
